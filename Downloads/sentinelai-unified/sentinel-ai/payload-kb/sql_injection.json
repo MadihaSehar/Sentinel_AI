@@ -1,0 +1,55 @@
+[
+  {
+    "id": "sqli-error-based",
+    "category": "sql_injection",
+    "context": "sql_string",
+    "encoding": "none",
+    "risk_level": "critical",
+    "source": "PayloadsAllTheThings",
+    "description": "Injecting a single unescaped quote character into a string-context parameter to see whether the backend database returns a syntax error, revealing unsanitized query construction.",
+    "detection_method": "error_signatures.py matches a known DB engine error string in the response that was not present in the baseline response for the same endpoint.",
+    "requires_authorization": true,
+    "example": "'",
+    "applicable_technologies": ["mysql", "postgresql", "mssql", "oracle", "sqlite"],
+    "references": ["https://owasp.org/www-community/attacks/SQL_Injection"]
+  },
+  {
+    "id": "sqli-boolean-based-blind",
+    "category": "sql_injection",
+    "context": "sql_numeric",
+    "encoding": "none",
+    "risk_level": "high",
+    "source": "PayloadsAllTheThings",
+    "description": "A true-condition and a false-condition variant of the same numeric parameter are sent; the application's response differs (content, length, or status) based on query truth value, with no visible error.",
+    "detection_method": "Requires paired baseline/test requests; response-comparison engine's text_similarity and length_delta between the true/false variants, both compared against a clean baseline.",
+    "requires_authorization": true,
+    "applicable_technologies": ["mysql", "postgresql", "mssql", "oracle", "sqlite"],
+    "references": ["https://owasp.org/www-community/attacks/Blind_SQL_Injection"]
+  },
+  {
+    "id": "sqli-time-based-blind",
+    "category": "sql_injection",
+    "context": "sql_string",
+    "encoding": "none",
+    "risk_level": "high",
+    "source": "PayloadsAllTheThings",
+    "description": "A conditional time-delay function is injected into a parameter; if the response is measurably slower than baseline, the condition was evaluated by the database.",
+    "detection_method": "comparison.py's timing_significant flag (elapsed_ms delta above threshold) is required but not sufficient alone -- must be corroborated by a second, independent delay-length test to rule out network jitter.",
+    "requires_authorization": true,
+    "applicable_technologies": ["mysql", "postgresql", "mssql", "oracle", "sqlite"],
+    "references": ["https://owasp.org/www-community/attacks/Blind_SQL_Injection"]
+  },
+  {
+    "id": "sqli-union-based",
+    "category": "sql_injection",
+    "context": "sql_numeric",
+    "encoding": "none",
+    "risk_level": "critical",
+    "source": "PayloadsAllTheThings",
+    "description": "Appending a UNION SELECT clause with a probed column count to append attacker-chosen data into the result set returned to the application.",
+    "detection_method": "Requires an incrementing column-count probe sequence and watches for a successful (non-error) response once the column count matches, then for marker data appearing in the rendered output.",
+    "requires_authorization": true,
+    "applicable_technologies": ["mysql", "postgresql", "mssql"],
+    "references": ["https://owasp.org/www-community/attacks/SQL_Injection"]
+  }
+]

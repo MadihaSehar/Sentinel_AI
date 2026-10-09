@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+.next/
+*.sqlite3
+.DS_Store
+sentinel_pgdata/

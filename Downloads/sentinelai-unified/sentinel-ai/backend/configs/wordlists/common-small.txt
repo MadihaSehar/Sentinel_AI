@@ -1,0 +1,14 @@
+admin
+api
+backup
+config
+login
+uploads
+.git
+.env
+robots.txt
+sitemap.xml
+wp-admin
+console
+debug
+test
