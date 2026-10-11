@@ -14,10 +14,11 @@ email-validator==2.2.0
 
 # --- Database ---
 sqlalchemy==2.0.35
-asyncpg==0.29.0
-psycopg2-binary==2.9.9
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
 alembic==1.13.3
 aiosqlite==0.20.0
+greenlet==3.1.1  # required by SQLAlchemy's async engine
 
 # --- Queue / cache ---
 redis==5.0.8

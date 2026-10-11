@@ -12,11 +12,47 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from .consensus.engine import ConsensusEngine, ConsensusResult
+from .consensus.engine import ConsensusEngine
+from .consensus.schemas import (
+    ConsensusResult,
+    ConsensusStatus,
+    ModelFinding,
+    Severity,
+)
 from .prompt_loader import load_prompt
 from .providers.base import AIAnalysisResult
 from .providers.factory import AIProviderRouter
 from .settings import AISettings
+
+
+def _severity_from_str(value: Optional[str]) -> Severity:
+    """Map a provider's free-form severity string to the Severity enum.
+
+    Unknown or missing severities fall back to INFO, which is the safe,
+    non-alarming default for a result that carries no real signal.
+    """
+    if not value:
+        return Severity.INFO
+    try:
+        return Severity(value.strip().lower())
+    except ValueError:
+        return Severity.INFO
+
+
+def _to_model_finding(result: AIAnalysisResult) -> ModelFinding:
+    """Normalize a single provider's result into the consensus engine's
+    ModelFinding shape. A result with no (or empty) ``finding`` is treated
+    as a "not vulnerable" vote."""
+    has_finding = bool(result.finding and result.finding.strip())
+    return ModelFinding(
+        model_name=result.provider,
+        finding=result.finding if has_finding else "No vulnerability indicated",
+        is_vulnerable=has_finding,
+        severity=_severity_from_str(result.severity),
+        confidence=max(0.0, min(1.0, result.confidence)),
+        reasoning_summary=result.reasoning_summary or "",
+        evidence=list(result.evidence),
+    )
 
 
 class AIAnalysisService:
@@ -62,7 +98,28 @@ class AIAnalysisService:
         """
         results = await self.analyze_multi(prompt_name, context)
         engine = engine or ConsensusEngine()
-        return engine.evaluate(results)
+
+        # Only successful provider calls participate in consensus scoring;
+        # failed/timed-out providers are excluded rather than counted as a
+        # "not vulnerable" vote (which would skew the result).
+        successful = [r for r in results if r.success]
+        findings = [_to_model_finding(r) for r in successful]
+
+        if not findings:
+            # Every provider failed — there is nothing to reason over.
+            return ConsensusResult(
+                status=ConsensusStatus.REQUIRES_MANUAL_REVIEW,
+                is_vulnerable_consensus=False,
+                severity=Severity.INFO,
+                consensus_confidence=0.0,
+                agreement_score=0.0,
+                participating_models=[],
+                model_findings=[],
+                evidence=[],
+                summary="No AI provider returned a successful result; manual review required.",
+            )
+
+        return engine.analyze(findings)
 
     @property
     def active_providers(self) -> list[str]:

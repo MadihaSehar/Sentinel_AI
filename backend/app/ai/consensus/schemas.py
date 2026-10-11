@@ -101,6 +101,11 @@ class ConsensusResult(BaseModel):
     dissenting_models: list[str] = Field(default_factory=list)
     disagreements: list[PairwiseDisagreement] = Field(default_factory=list)
     model_findings: list[ModelFinding]
+    evidence: list[str] = Field(
+        default_factory=list,
+        description="Deduplicated union of evidence strings reported by every "
+        "participating model, preserving first-seen order.",
+    )
     summary: str
 
     model_config = {"use_enum_values": False}
