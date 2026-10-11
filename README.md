@@ -228,6 +228,32 @@ npm run dev
 
 ---
 
+## ▶️ How a scan runs
+
+Authorizing and starting an assessment (`POST .../start`) launches the
+orchestrator (`app.orchestrator.scan_orchestrator`), which drives the stages
+in order and persists the result:
+
+```text
+recon → discovery → vulnerability → analyze → AI consensus → persist
+```
+
+- It flips `Assessment.status` RUNNING → COMPLETED/FAILED and streams live
+  progress over the WebSocket event bus (`/api/assessments/{id}/events`), so
+  the dashboard shows each stage in real time.
+- Each stage is **isolated**: if a scanning tool isn't installed (or a stage
+  errors), that stage is recorded and the scan continues with whatever was
+  gathered, rather than aborting the whole run.
+- Findings flow through the promotion step (consensus + persistence), so when
+  the scan finishes, the findings API, reports and diff all reflect it.
+
+> **Note:** the orchestrator runs **in-process** as an asyncio background task
+> (fine for a single backend / dev + demo). Real findings require the scanning
+> tools to be installed (`backend/scripts/install_recon_tools.sh`); without
+> them the stages no-op cleanly and the scan still completes. For production
+> scale, the same `run_scan()` would be dispatched to a Celery worker — the
+> orchestrator logic doesn't change.
+
 ## 📄 Reports
 
 Every assessment can be exported as a polished, self-contained **HTML** report

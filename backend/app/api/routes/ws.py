@@ -1,28 +1,38 @@
-"""WebSocket endpoint for live scan events (Section 19)."""
-import json
+"""WebSocket endpoint for live scan events (Section 19).
+
+Subscribes the client to the in-process scan event bus for an assessment and
+streams events published by the orchestrator (stage progress, findings count,
+completion). A periodic heartbeat keeps the connection alive during quiet
+periods so proxies don't drop it.
+"""
 import asyncio
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from datetime import datetime, timezone
+
+from app.orchestrator.events import make_event, scan_event_bus
 
 router = APIRouter(tags=["websocket"])
+
+_HEARTBEAT_SECONDS = 30
 
 
 @router.websocket("/assessments/{assessment_id}/events")
 async def assessment_events(websocket: WebSocket, assessment_id: str):
-    """Live scan event stream. In production this would be fed by the
-    Celery workers / orchestrator. For now, accepts the connection
-    and sends a heartbeat to keep the connection alive."""
     await websocket.accept()
+    queue = scan_event_bus.subscribe(assessment_id)
+    await websocket.send_json(
+        make_event("log", message="Subscribed to scan events.")
+    )
     try:
         while True:
-            # Send heartbeat every 30 seconds to keep connection alive
-            await websocket.send_json({
-                "type": "log",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "payload": {"message": "Connection alive. Waiting for scan events."}
-            })
-            await asyncio.sleep(30)
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=_HEARTBEAT_SECONDS)
+                await websocket.send_json(event)
+            except asyncio.TimeoutError:
+                await websocket.send_json(make_event("heartbeat"))
     except WebSocketDisconnect:
         pass
     except Exception:
         pass
+    finally:
+        scan_event_bus.unsubscribe(assessment_id, queue)
