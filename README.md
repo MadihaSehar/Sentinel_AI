@@ -9,6 +9,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local_AI-orange.svg)](https://ollama.ai/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/MadihaSehar/Sentinel_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/MadihaSehar/Sentinel_AI/actions/workflows/ci.yml)
 
 > ⚠️ **Authorized Security Research Only**  
 > SentinelAI is purpose-built for penetration testers, bug bounty researchers, CTF challenges, and security auditing. It strictly enforces a cryptographic authorization gate and scope constraints before any network discovery or scanning tool can be executed. Always ensure you have explicit, documented permission before testing any target.
@@ -145,7 +146,24 @@ sentinel-ai/
 
 ### Option 2: Running with Local Ollama (100% Free & Private)
 
-To run without any cloud API keys:
+To run the **entire stack plus a local Ollama model** with one command — no
+cloud API keys, nothing leaves your machine — use the Ollama overlay. It adds
+an `ollama` service and automatically pulls the model on first boot:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up --build
+```
+
+Pick a different model with `OLLAMA_MODEL` (e.g. `qwen2.5`, `mistral`):
+
+```bash
+OLLAMA_MODEL=qwen2.5 docker compose -f docker-compose.yml -f docker-compose.ollama.yml up
+```
+
+For NVIDIA GPU acceleration, uncomment the `deploy.resources` block in
+`docker-compose.ollama.yml` and install the NVIDIA Container Toolkit.
+
+**Prefer a host-installed Ollama instead?**
 
 1. **Install and run Ollama**:
    ```bash
@@ -154,7 +172,13 @@ To run without any cloud API keys:
    ollama run llama3.1
    ```
 
-2. SentinelAI's local provider will automatically connect to `http://localhost:11434/v1` to perform security reasoning and consensus completely on your machine.
+2. Point the backend at it by setting these in your `.env`:
+   ```bash
+   LOCAL_MODEL_BASE_URL=http://localhost:11434/v1/chat/completions
+   LOCAL_MODEL_NAME=llama3.1
+   ```
+   The local provider then performs security reasoning and consensus
+   completely on your machine, with zero external API calls.
 
 ---
 
@@ -194,9 +218,57 @@ npm run dev
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
 | `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
+| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif` | Render an assessment as an HTML, PDF, or SARIF report |
+| `GET` | `/api/reports/sample?format=html\|pdf\|sarif` | Bundled demo report (no auth) — great for a quick look |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
 ---
+
+## 📄 Reports
+
+Every assessment can be exported as a polished, self-contained **HTML** report
+or a downloadable **PDF** — executive summary with an aggregate risk score,
+severity breakdown, per-finding remediation guidance, the AI consensus verdict
+for each finding, and an attack-surface appendix.
+
+See a ready-made example without running anything:
+
+- [`docs/sample-report/sentinelai-sample-report.html`](docs/sample-report/sentinelai-sample-report.html)
+- [`docs/sample-report/sentinelai-sample-report.pdf`](docs/sample-report/sentinelai-sample-report.pdf)
+
+Or hit the live demo endpoint once the backend is running:
+
+```bash
+# HTML in your browser
+open http://localhost:8000/api/reports/sample
+
+# Download the PDF
+curl -L "http://localhost:8000/api/reports/sample?format=pdf" -o report.pdf
+```
+
+PDF export uses the pure-Python `xhtml2pdf` engine, so it needs **no system
+libraries** (no Cairo/Pango) and works unchanged in Docker and CI.
+
+### SARIF export (GitHub code scanning)
+
+Findings also export as **SARIF 2.1.0** (`format=sarif`), the OASIS standard
+consumed natively by GitHub, GitLab, Azure DevOps and VS Code. Upload it to a
+repo's **Security → Code scanning** tab and each finding appears as an
+annotation (severity driven by the `security-severity` property):
+
+```bash
+curl -L "http://localhost:8000/api/reports/sample?format=sarif" -o results.sarif
+# then, in CI: github/codeql-action/upload-sarif@v3 with sarif_file: results.sarif
+```
+
+Example output: [`docs/sample-report/sentinelai-sample-report.sarif`](docs/sample-report/sentinelai-sample-report.sarif).
+
+**Ready-to-use GitHub Action.** [`.github/workflows/security-scan.yml`](.github/workflows/security-scan.yml)
+generates SARIF and uploads it to code scanning. It runs out of the box with
+the sample findings (so a first run proves the Security-tab integration), and
+switches to exporting a **real** assessment automatically once you set the
+`SENTINEL_API_URL`, `SENTINEL_TOKEN` and `SENTINEL_ASSESSMENT_ID` repo secrets.
+Trigger it from the Actions tab or on its weekly schedule.
 
 ## 🧪 Testing
 

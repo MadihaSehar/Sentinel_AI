@@ -118,6 +118,7 @@ class ConsensusEngine:
             dissenting_models=dissenting,
             disagreements=disagreements,
             model_findings=findings,
+            evidence=self._aggregate_evidence(findings),
             summary=self._build_summary(
                 status, findings, vote_fraction, consensus_confidence, dissenting
             ),
@@ -142,11 +143,22 @@ class ConsensusEngine:
             dissenting_models=[],
             disagreements=[],
             model_findings=[finding],
+            evidence=self._aggregate_evidence([finding]),
             summary=(
                 f"Only one model ({finding.model_name}) returned a result; "
                 f"single-model output is never auto-confirmed. Manual review required."
             ),
         )
+
+    @staticmethod
+    def _aggregate_evidence(findings: list[ModelFinding]) -> list[str]:
+        """Deduplicated union of all models' evidence, preserving order."""
+        seen: dict[str, None] = {}
+        for f in findings:
+            for item in f.evidence:
+                if item not in seen:
+                    seen[item] = None
+        return list(seen)
 
     def _pairwise_disagreements(
         self, findings: list[ModelFinding]

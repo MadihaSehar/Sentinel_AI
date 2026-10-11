@@ -31,6 +31,10 @@ class AssetResponse(BaseModel):
 
 
 class FindingResponse(BaseModel):
+    # `model_count` would otherwise collide with Pydantic's protected
+    # ``model_`` namespace and emit a warning; we don't use that namespace.
+    model_config = {"protected_namespaces": ()}
+
     id: str
     title: str
     category: str

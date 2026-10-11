@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import app.models  # noqa: F401  — registers all models on Base.metadata
 from app.api.routes import assessments, auth, projects
-from app.api.routes import scan, assessments_flat, ws
+from app.api.routes import scan, assessments_flat, ws, reports
 from app.core.config import get_settings
 from app.core.db import Base, engine
 
@@ -51,6 +51,7 @@ app.include_router(assessments.router, prefix=settings.API_V1_PREFIX)
 app.include_router(assessments_flat.router, prefix=settings.API_V1_PREFIX)
 app.include_router(scan.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
+app.include_router(reports.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health", tags=["meta"])

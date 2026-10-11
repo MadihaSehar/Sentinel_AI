@@ -199,3 +199,43 @@ class ScopeConfig(BaseModel):
         if not self.included_domains and not self.included_cidrs:
             raise ValueError("At least one included domain or CIDR must be specified.")
         return self
+
+
+# ---------------------------------------------------------------------------
+# Scope-check endpoint request/response
+# ---------------------------------------------------------------------------
+
+
+class ScopeCheckRequest(BaseModel):
+    """
+    Request body for the ``/scope/check`` endpoint — lets a researcher ask
+    "is this host in scope?" before any scanning happens.
+    """
+
+    host: str = Field(
+        ...,
+        description="A hostname or IP literal to evaluate against the assessment's scope rules.",
+    )
+    resolve: bool = Field(
+        False,
+        description="When true, perform a real DNS lookup and validate the resolved IPs too. "
+        "Requires the assessment to already be authorized.",
+    )
+
+    @field_validator("host")
+    @classmethod
+    def validate_host(cls, v: str) -> str:
+        v = v.strip().lower().rstrip(".")
+        if not v:
+            raise ValueError("host must not be empty")
+        return v
+
+
+class ScopeCheckResponse(BaseModel):
+    """Decision returned by the scope-check endpoint."""
+
+    host: str
+    allowed: bool
+    reason: str
+    matched_rule: Optional[str] = None
+    resolved_ips: list[str] = Field(default_factory=list)

@@ -1,0 +1,341 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SentinelAI",
+          "version": "1.0.0",
+          "informationUri": "https://github.com/MadihaSehar/Sentinel_AI",
+          "rules": [
+            {
+              "id": "CWE-89",
+              "name": "Injection",
+              "shortDescription": {
+                "text": "SQL Injection in product search"
+              },
+              "fullDescription": {
+                "text": "The product search endpoint concatenates the 'q' parameter directly into a SQL query. A boolean-based blind injection was confirmed: payloads altering the WHERE clause changed the result set deterministically, and a time-based payload induced a measurable server delay."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "security-severity": "9.5",
+                "tags": [
+                  "security",
+                  "Injection",
+                  "A03:2021 \u2013 Injection"
+                ],
+                "cwe": "CWE-89"
+              },
+              "helpUri": "https://owasp.org/www-community/attacks/SQL_Injection"
+            },
+            {
+              "id": "CWE-79",
+              "name": "Cross-SiteScripting",
+              "shortDescription": {
+                "text": "Reflected Cross-Site Scripting in error page"
+              },
+              "fullDescription": {
+                "text": "The search results page reflects the 'query' parameter into the HTML response without output encoding, allowing arbitrary script execution in a victim's browser."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "security-severity": "8.0",
+                "tags": [
+                  "security",
+                  "Cross-Site Scripting",
+                  "A03:2021 \u2013 Injection"
+                ],
+                "cwe": "CWE-79"
+              },
+              "helpUri": "https://owasp.org/www-community/attacks/xss/"
+            },
+            {
+              "id": "CWE-639",
+              "name": "BrokenAccessControl",
+              "shortDescription": {
+                "text": "Insecure Direct Object Reference on invoice download"
+              },
+              "fullDescription": {
+                "text": "Invoice IDs are sequential integers and the endpoint does not verify that the authenticated user owns the requested invoice, allowing horizontal privilege escalation and disclosure of other customers' billing data."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "security-severity": "8.0",
+                "tags": [
+                  "security",
+                  "Broken Access Control",
+                  "A01:2021 \u2013 Broken Access Control"
+                ],
+                "cwe": "CWE-639"
+              },
+              "helpUri": "https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html"
+            },
+            {
+              "id": "CWE-693",
+              "name": "SecurityMisconfiguration",
+              "shortDescription": {
+                "text": "Missing security headers"
+              },
+              "fullDescription": {
+                "text": "Responses omit Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options and X-Frame-Options, weakening defense-in-depth against XSS, clickjacking and protocol-downgrade attacks."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "security-severity": "5.5",
+                "tags": [
+                  "security",
+                  "Security Misconfiguration",
+                  "A05:2021 \u2013 Security Misconfiguration"
+                ],
+                "cwe": "CWE-693"
+              },
+              "helpUri": "https://owasp.org/www-project-secure-headers/"
+            },
+            {
+              "id": "CWE-601",
+              "name": "OpenRedirect",
+              "shortDescription": {
+                "text": "Open redirect via 'next' parameter"
+              },
+              "fullDescription": {
+                "text": "The login flow redirects to an attacker-controlled absolute URL supplied in 'next' after authentication, enabling phishing and OAuth token theft chains."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "security-severity": "3.0",
+                "tags": [
+                  "security",
+                  "Open Redirect",
+                  "A01:2021 \u2013 Broken Access Control"
+                ],
+                "cwe": "CWE-601"
+              },
+              "helpUri": "https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html"
+            },
+            {
+              "id": "CWE-200",
+              "name": "InformationDisclosure",
+              "shortDescription": {
+                "text": "Verbose server banner discloses software version"
+              },
+              "fullDescription": {
+                "text": "The Server header and default error pages reveal exact software versions, helping an attacker target known CVEs."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "security-severity": "0.0",
+                "tags": [
+                  "security",
+                  "Information Disclosure",
+                  "A05:2021 \u2013 Security Misconfiguration"
+                ],
+                "cwe": "CWE-200"
+              }
+            }
+          ]
+        }
+      },
+      "properties": {
+        "target": "example.com",
+        "assessment": "Quarterly External Assessment",
+        "generated_at": "2026-10-11T14:30:00+00:00"
+      },
+      "results": [
+        {
+          "ruleId": "CWE-89",
+          "level": "error",
+          "message": {
+            "text": "The product search endpoint concatenates the 'q' parameter directly into a SQL query. A boolean-based blind injection was confirmed: payloads altering the WHERE clause changed the result set deterministically, and a time-based payload induced a measurable server delay.\n\nRemediation: Replace string concatenation with parameterized queries / prepared statements. Add an allow-list validator for the search term and apply least-privilege database credentials so the web role cannot read unrelated tables."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://api.example.com/v1/products"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "critical",
+            "security-severity": "9.5",
+            "method": "GET",
+            "parameter": "q",
+            "consensus_status": "confirmed",
+            "agreement_score": 1.0,
+            "consensus_confidence": 0.94,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        },
+        {
+          "ruleId": "CWE-79",
+          "level": "error",
+          "message": {
+            "text": "The search results page reflects the 'query' parameter into the HTML response without output encoding, allowing arbitrary script execution in a victim's browser.\n\nRemediation: Context-aware output encoding on all reflected values, a strict Content-Security-Policy, and framework auto-escaping (do not disable it for this view)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://www.example.com/search"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "high",
+            "security-severity": "8.0",
+            "method": "GET",
+            "parameter": "query",
+            "consensus_status": "confirmed",
+            "agreement_score": 1.0,
+            "consensus_confidence": 0.89,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "error",
+          "message": {
+            "text": "Invoice IDs are sequential integers and the endpoint does not verify that the authenticated user owns the requested invoice, allowing horizontal privilege escalation and disclosure of other customers' billing data.\n\nRemediation: Enforce an ownership check on every object access, and switch sequential IDs to unguessable UUIDs as defense in depth."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://api.example.com/v1/invoices/{id}"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "high",
+            "security-severity": "8.0",
+            "method": "GET",
+            "parameter": "id",
+            "consensus_status": "likely",
+            "agreement_score": 0.75,
+            "consensus_confidence": 0.78,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        },
+        {
+          "ruleId": "CWE-693",
+          "level": "warning",
+          "message": {
+            "text": "Responses omit Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options and X-Frame-Options, weakening defense-in-depth against XSS, clickjacking and protocol-downgrade attacks.\n\nRemediation: Add HSTS (with preload), a restrictive CSP, X-Content-Type-Options: nosniff and X-Frame-Options: DENY at the edge/reverse proxy."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://www.example.com/"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "medium",
+            "security-severity": "5.5",
+            "method": "GET",
+            "parameter": null,
+            "consensus_status": "confirmed",
+            "agreement_score": 1.0,
+            "consensus_confidence": 0.82,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "The login flow redirects to an attacker-controlled absolute URL supplied in 'next' after authentication, enabling phishing and OAuth token theft chains.\n\nRemediation: Allow only relative paths or an explicit allow-list of hosts for post-login redirects."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://www.example.com/login"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "low",
+            "security-severity": "3.0",
+            "method": "GET",
+            "parameter": "next",
+            "consensus_status": "likely",
+            "agreement_score": 0.66,
+            "consensus_confidence": 0.61,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        },
+        {
+          "ruleId": "CWE-200",
+          "level": "note",
+          "message": {
+            "text": "The Server header and default error pages reveal exact software versions, helping an attacker target known CVEs.\n\nRemediation: Suppress or genericize version banners (ServerTokens Prod)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://staging.example.com/"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "info",
+            "security-severity": "0.0",
+            "method": "GET",
+            "parameter": null,
+            "consensus_status": "confirmed",
+            "agreement_score": 1.0,
+            "consensus_confidence": 0.7,
+            "participating_models": [
+              "gemini",
+              "deepseek",
+              "llama3.1 (local)"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

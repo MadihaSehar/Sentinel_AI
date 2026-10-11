@@ -1,0 +1,57 @@
+name: Security Scan → Code Scanning
+
+# Runs a SentinelAI assessment export and uploads it to GitHub code scanning,
+# so findings appear under Security → Code scanning and inline on PRs.
+#
+# Out of the box this uploads the bundled SAMPLE findings so you can see the
+# integration work immediately. To upload a REAL assessment, set these repo
+# secrets and it switches to live mode automatically:
+#   SENTINEL_API_URL         e.g. https://sentinel.example.com/api
+#   SENTINEL_TOKEN           a bearer token for that instance
+#   SENTINEL_ASSESSMENT_ID   the assessment UUID to export
+#
+# Trigger it manually from the Actions tab, or on a weekly schedule.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays at 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write # required to upload SARIF
+
+jobs:
+  scan:
+    name: Export findings and upload SARIF
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate SARIF
+        env:
+          SENTINEL_API_URL: ${{ secrets.SENTINEL_API_URL }}
+          SENTINEL_TOKEN: ${{ secrets.SENTINEL_TOKEN }}
+          SENTINEL_ASSESSMENT_ID: ${{ secrets.SENTINEL_ASSESSMENT_ID }}
+        run: python scripts/generate_sarif.py "$GITHUB_WORKSPACE/results.sarif"
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: sentinelai

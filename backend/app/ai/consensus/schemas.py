@@ -57,6 +57,10 @@ class ModelFinding(BaseModel):
     of evidence. Matches the structure described in section 11 of the spec.
     """
 
+    # `model_name` would collide with Pydantic's protected ``model_``
+    # namespace; we don't use that namespace, so opt out of the guard.
+    model_config = {"protected_namespaces": ()}
+
     model_name: str = Field(..., description="e.g. 'gemini', 'grok', 'deepseek'")
     finding: str = Field(..., description="Short description of what the model concluded")
     is_vulnerable: bool = Field(
@@ -101,6 +105,11 @@ class ConsensusResult(BaseModel):
     dissenting_models: list[str] = Field(default_factory=list)
     disagreements: list[PairwiseDisagreement] = Field(default_factory=list)
     model_findings: list[ModelFinding]
+    evidence: list[str] = Field(
+        default_factory=list,
+        description="Deduplicated union of evidence strings reported by every "
+        "participating model, preserving first-seen order.",
+    )
     summary: str
 
     model_config = {"use_enum_values": False}

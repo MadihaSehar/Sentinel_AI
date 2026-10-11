@@ -1,4 +1,5 @@
 import { formatRelativeTime } from "@/lib/format";
+import { reportUrl } from "@/lib/api";
 import { StatCard } from "@/components/StatusBadges";
 import type { Severity } from "@/lib/types";
 
@@ -107,12 +108,32 @@ export default function ReportsPage() {
             Exported compliance, executive, and technical vulnerability dossiers.
           </p>
         </div>
-        <button
-          type="button"
-          className="rounded-md bg-cyan-500 px-3.5 py-1.5 text-sm font-medium text-slate-950 hover:bg-cyan-400 transition-colors"
-        >
-          Generate Report
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={reportUrl("/reports/sample", "html")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+          >
+            View Sample (HTML)
+          </a>
+          <a
+            href={reportUrl("/reports/sample", "sarif")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+          >
+            SARIF
+          </a>
+          <a
+            href={reportUrl("/reports/sample", "pdf")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md bg-cyan-500 px-3.5 py-1.5 text-sm font-medium text-slate-950 hover:bg-cyan-400 transition-colors"
+          >
+            Download Sample (PDF)
+          </a>
+        </div>
       </header>
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -170,8 +191,10 @@ export default function ReportsPage() {
                     <MiniSeverityCounts counts={report.findingsCount} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
+                    <a
+                      href={reportUrl("/reports/sample", report.format === "PDF" ? "pdf" : "html")}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 rounded bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700 hover:text-white transition-colors"
                     >
                       <svg
@@ -188,7 +211,7 @@ export default function ReportsPage() {
                         />
                       </svg>
                       Download
-                    </button>
+                    </a>
                   </td>
                 </tr>
               ))}

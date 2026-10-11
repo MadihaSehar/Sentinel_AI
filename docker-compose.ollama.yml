@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------
+# Ollama overlay — run SentinelAI's AI consensus 100% locally, no API keys.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up --build
+#
+# This adds a local Ollama inference server and points the backend's
+# LocalModelProvider at it. The `ollama-init` service pulls the model(s)
+# on first boot (one-time download, cached in the `sentinel_ollama` volume).
+#
+# Change the model with OLLAMA_MODEL, e.g.:
+#   OLLAMA_MODEL=qwen2.5 docker compose -f docker-compose.yml -f docker-compose.ollama.yml up
+#
+# GPU acceleration (optional): uncomment the `deploy.resources` block on the
+# `ollama` service and install the NVIDIA Container Toolkit on the host.
+# ---------------------------------------------------------------------------
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - sentinel_ollama:/root/.ollama
+    ports:
+      # Exposed so you can `ollama run` against it from the host too; drop
+      # this line if you only want it reachable from the backend container.
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    # --- Uncomment for NVIDIA GPU acceleration ---
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # One-shot: wait for the server, pull the model, then exit 0.
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+    entrypoint: ["/bin/sh", "-c", "ollama pull \"$${OLLAMA_MODEL}\""]
+    restart: "no"
+
+  backend:
+    # Merges with the base definition in docker-compose.yml.
+    environment:
+      LOCAL_MODEL_BASE_URL: http://ollama:11434/v1/chat/completions
+      LOCAL_MODEL_NAME: ${OLLAMA_MODEL:-llama3.1}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+
+volumes:
+  sentinel_ollama:
