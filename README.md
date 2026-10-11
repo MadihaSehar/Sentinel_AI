@@ -9,6 +9,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local_AI-orange.svg)](https://ollama.ai/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/MadihaSehar/Sentinel_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/MadihaSehar/Sentinel_AI/actions/workflows/ci.yml)
 
 > ⚠️ **Authorized Security Research Only**  
 > SentinelAI is purpose-built for penetration testers, bug bounty researchers, CTF challenges, and security auditing. It strictly enforces a cryptographic authorization gate and scope constraints before any network discovery or scanning tool can be executed. Always ensure you have explicit, documented permission before testing any target.
@@ -145,7 +146,24 @@ sentinel-ai/
 
 ### Option 2: Running with Local Ollama (100% Free & Private)
 
-To run without any cloud API keys:
+To run the **entire stack plus a local Ollama model** with one command — no
+cloud API keys, nothing leaves your machine — use the Ollama overlay. It adds
+an `ollama` service and automatically pulls the model on first boot:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up --build
+```
+
+Pick a different model with `OLLAMA_MODEL` (e.g. `qwen2.5`, `mistral`):
+
+```bash
+OLLAMA_MODEL=qwen2.5 docker compose -f docker-compose.yml -f docker-compose.ollama.yml up
+```
+
+For NVIDIA GPU acceleration, uncomment the `deploy.resources` block in
+`docker-compose.ollama.yml` and install the NVIDIA Container Toolkit.
+
+**Prefer a host-installed Ollama instead?**
 
 1. **Install and run Ollama**:
    ```bash
@@ -154,7 +172,13 @@ To run without any cloud API keys:
    ollama run llama3.1
    ```
 
-2. SentinelAI's local provider will automatically connect to `http://localhost:11434/v1` to perform security reasoning and consensus completely on your machine.
+2. Point the backend at it by setting these in your `.env`:
+   ```bash
+   LOCAL_MODEL_BASE_URL=http://localhost:11434/v1/chat/completions
+   LOCAL_MODEL_NAME=llama3.1
+   ```
+   The local provider then performs security reasoning and consensus
+   completely on your machine, with zero external API calls.
 
 ---
 
