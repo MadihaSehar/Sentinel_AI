@@ -263,6 +263,13 @@ curl -L "http://localhost:8000/api/reports/sample?format=sarif" -o results.sarif
 
 Example output: [`docs/sample-report/sentinelai-sample-report.sarif`](docs/sample-report/sentinelai-sample-report.sarif).
 
+**Ready-to-use GitHub Action.** [`.github/workflows/security-scan.yml`](.github/workflows/security-scan.yml)
+generates SARIF and uploads it to code scanning. It runs out of the box with
+the sample findings (so a first run proves the Security-tab integration), and
+switches to exporting a **real** assessment automatically once you set the
+`SENTINEL_API_URL`, `SENTINEL_TOKEN` and `SENTINEL_ASSESSMENT_ID` repo secrets.
+Trigger it from the Actions tab or on its weekly schedule.
+
 ## 🧪 Testing
 
 Run the test suite with `pytest`:

@@ -122,6 +122,29 @@ async def test_sample_endpoint_pdf(client: AsyncClient):
     assert resp.content[:5] == b"%PDF-"
 
 
+def test_generate_sarif_script_sample_mode(tmp_path, monkeypatch):
+    import importlib.util
+    from pathlib import Path
+
+    for var in ("SENTINEL_API_URL", "SENTINEL_TOKEN", "SENTINEL_ASSESSMENT_ID"):
+        monkeypatch.delenv(var, raising=False)
+
+    script = Path(__file__).resolve().parent.parent / "scripts" / "generate_sarif.py"
+    spec = importlib.util.spec_from_file_location("generate_sarif", script)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    out = tmp_path / "results.sarif"
+    monkeypatch.setattr("sys.argv", ["generate_sarif.py", str(out)])
+    assert mod.main() == 0
+
+    import json
+
+    data = json.loads(out.read_text())
+    assert data["version"] == "2.1.0"
+    assert data["runs"][0]["results"]
+
+
 @pytest.mark.asyncio
 async def test_assessment_report_requires_auth(client: AsyncClient):
     import uuid
