@@ -9,6 +9,7 @@ from app.reports import (
     build_report_html,
     build_report_pdf,
     build_sample_report,
+    build_sarif,
 )
 from app.reports.schemas import ReportFinding, Severity
 
@@ -70,6 +71,39 @@ def test_pdf_generation_produces_valid_pdf_bytes():
     pdf = build_report_pdf(build_sample_report())
     assert pdf[:5] == b"%PDF-"
     assert len(pdf) > 2000  # a real multi-finding report is not trivially small
+
+
+def test_sarif_structure_and_mappings():
+    sarif = build_sarif(build_sample_report())
+    assert sarif["version"] == "2.1.0"
+    assert sarif["$schema"].endswith("sarif-2.1.0.json")
+
+    run = sarif["runs"][0]
+    assert run["tool"]["driver"]["name"] == "SentinelAI"
+
+    results = run["results"]
+    assert len(results) == len(build_sample_report().findings)
+    # Results are severity-sorted: the critical SQLi is first and maps to error.
+    assert results[0]["ruleId"] == "CWE-89"
+    assert results[0]["level"] == "error"
+    assert results[0]["properties"]["security-severity"] == "9.5"
+    assert results[0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"].startswith("http")
+
+    # Every result references a declared rule, and levels are SARIF-valid.
+    rule_ids = {r["id"] for r in run["tool"]["driver"]["rules"]}
+    for res in results:
+        assert res["ruleId"] in rule_ids
+        assert res["level"] in {"error", "warning", "note"}
+
+
+@pytest.mark.asyncio
+async def test_sample_endpoint_sarif(client: AsyncClient):
+    resp = await client.get("/api/reports/sample", params={"format": "sarif"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/sarif+json"
+    body = resp.json()
+    assert body["version"] == "2.1.0"
+    assert body["runs"][0]["results"]
 
 
 @pytest.mark.asyncio

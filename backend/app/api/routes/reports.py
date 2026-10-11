@@ -10,6 +10,8 @@ from __future__ import annotations
 import uuid
 from enum import Enum
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +26,7 @@ from app.reports import (
     build_report_html,
     build_report_pdf,
     build_sample_report,
+    build_sarif,
 )
 from app.services import assessment_service
 
@@ -33,6 +36,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 class ReportFormat(str, Enum):
     HTML = "html"
     PDF = "pdf"
+    SARIF = "sarif"
 
 
 def _slug(value: str) -> str:
@@ -51,6 +55,13 @@ def _render(data: ReportData, fmt: ReportFormat) -> Response:
         return Response(
             content=pdf,
             media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
+    if fmt is ReportFormat.SARIF:
+        filename = f"sentinelai-{_slug(data.target)}.sarif"
+        return Response(
+            content=json.dumps(build_sarif(data), indent=2),
+            media_type="application/sarif+json",
             headers={"Content-Disposition": f'inline; filename="{filename}"'},
         )
     return HTMLResponse(content=build_report_html(data))

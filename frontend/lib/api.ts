@@ -75,7 +75,7 @@ export { ApiError };
  * Used for plain anchor links / downloads (not fetch), so it must resolve to
  * an absolute URL the browser can open directly.
  */
-export function reportUrl(path: string, format?: "html" | "pdf"): string {
+export function reportUrl(path: string, format?: "html" | "pdf" | "sarif"): string {
   const base =
     API_BASE.startsWith("http") || typeof window === "undefined"
       ? API_BASE

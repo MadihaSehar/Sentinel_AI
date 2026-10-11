@@ -218,8 +218,8 @@ npm run dev
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
 | `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
-| `GET` | `/api/reports/assessments/{id}?format=html\|pdf` | Render an assessment as an HTML or PDF report |
-| `GET` | `/api/reports/sample?format=html\|pdf` | Bundled demo report (no auth) — great for a quick look |
+| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif` | Render an assessment as an HTML, PDF, or SARIF report |
+| `GET` | `/api/reports/sample?format=html\|pdf\|sarif` | Bundled demo report (no auth) — great for a quick look |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
 ---
@@ -248,6 +248,20 @@ curl -L "http://localhost:8000/api/reports/sample?format=pdf" -o report.pdf
 
 PDF export uses the pure-Python `xhtml2pdf` engine, so it needs **no system
 libraries** (no Cairo/Pango) and works unchanged in Docker and CI.
+
+### SARIF export (GitHub code scanning)
+
+Findings also export as **SARIF 2.1.0** (`format=sarif`), the OASIS standard
+consumed natively by GitHub, GitLab, Azure DevOps and VS Code. Upload it to a
+repo's **Security → Code scanning** tab and each finding appears as an
+annotation (severity driven by the `security-severity` property):
+
+```bash
+curl -L "http://localhost:8000/api/reports/sample?format=sarif" -o results.sarif
+# then, in CI: github/codeql-action/upload-sarif@v3 with sarif_file: results.sarif
+```
+
+Example output: [`docs/sample-report/sentinelai-sample-report.sarif`](docs/sample-report/sentinelai-sample-report.sarif).
 
 ## 🧪 Testing
 
