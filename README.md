@@ -293,9 +293,14 @@ python backend/scripts/diff_reports.py jan-scan.json feb-scan.sarif -o diff.pdf
 open http://localhost:8000/api/reports/diff/sample
 ```
 
-Findings are persisted per assessment (ingest them via
-`POST /api/assessments/{id}/findings`), so reports and the diff run off real
-stored data — and two stored assessments can be compared directly with
+Findings are persisted per assessment, so reports and the diff run off real
+stored data. The scan stages feed persistence through one promotion step —
+`app.orchestrator.finding_promotion.promote_and_persist()` — which normalizes
+nuclei findings and analyzer candidates into one shape, runs each through the
+multi-model AI consensus engine (when AI providers are configured; otherwise
+it keeps the deterministic confidence and marks the finding for manual
+review), and writes the result. You can also ingest findings directly via
+`POST /api/assessments/{id}/findings`. Either way — and two stored assessments can be compared directly with
 `GET /api/reports/diff/assessments?baseline={id}&current={id}` (no files
 needed). Findings are matched across scans by `(vulnerability rule, method,
 endpoint, parameter)`, so a finding whose severity changed is still recognised

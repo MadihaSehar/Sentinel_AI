@@ -80,6 +80,8 @@ class ModelFinding(BaseModel):
 
 
 class PairwiseDisagreement(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     model_a: str
     model_b: str
     verdict_disagrees: bool
@@ -112,4 +114,4 @@ class ConsensusResult(BaseModel):
     )
     summary: str
 
-    model_config = {"use_enum_values": False}
+    model_config = {"use_enum_values": False, "protected_namespaces": ()}
