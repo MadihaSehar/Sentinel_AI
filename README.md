@@ -247,12 +247,31 @@ recon → discovery → vulnerability → analyze → AI consensus → persist
 - Findings flow through the promotion step (consensus + persistence), so when
   the scan finishes, the findings API, reports and diff all reflect it.
 
-> **Note:** the orchestrator runs **in-process** as an asyncio background task
-> (fine for a single backend / dev + demo). Real findings require the scanning
-> tools to be installed (`backend/scripts/install_recon_tools.sh`); without
-> them the stages no-op cleanly and the scan still completes. For production
-> scale, the same `run_scan()` would be dispatched to a Celery worker — the
-> orchestrator logic doesn't change.
+> **Note:** real findings require the scanning tools to be installed
+> (`backend/scripts/install_recon_tools.sh`); without them the stages no-op
+> cleanly and the scan still completes.
+
+### Running scans on a Celery worker (production scale)
+
+By default scans run **in-process** (one asyncio background task per scan —
+fine for dev + demo). Set `USE_CELERY=true` to dispatch each scan to a
+**Celery worker** instead, so many scans run concurrently without blocking the
+API. The `docker compose` stack already includes a `worker` service; it's the
+only change needed:
+
+```bash
+# already wired in docker-compose.yml:
+#   worker: celery -A app.worker.celery_app worker --concurrency=4
+docker compose up --build
+
+# or run a worker by hand against your Redis broker:
+cd backend && USE_CELERY=true celery -A app.worker.celery_app worker --loglevel=info
+```
+
+The orchestrator logic is identical in both modes — only *where* `run_scan()`
+executes changes. In Celery mode, live scan events are carried between the
+worker and the API's WebSocket over a Redis pub/sub bridge, so the dashboard
+stays live across processes.
 
 ## 📄 Reports
 

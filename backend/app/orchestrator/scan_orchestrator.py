@@ -115,8 +115,19 @@ async def run_scan(
     registry = registry or build_default_registry()
     aid = str(assessment_id)
 
+    from app.core.config import get_settings
+
+    _use_redis = get_settings().USE_CELERY
+
     async def emit(type_: str, **payload):
-        await bus.publish(aid, make_event(type_, **payload))
+        event = make_event(type_, **payload)
+        await bus.publish(aid, event)
+        if _use_redis:
+            # Cross-process delivery so the web process's WebSocket sees
+            # events from the worker process.
+            from app.orchestrator import redis_events
+
+            await redis_events.publish(aid, event)
 
     try:
         await _run_scan_body(session_factory, assessment_id, aid, registry, ai_service, stages, emit)
@@ -226,9 +237,18 @@ async def _run_scan_body(session_factory, assessment_id, aid, registry, ai_servi
 
 def launch_scan(assessment_id: uuid.UUID) -> None:
     """
-    Fire-and-forget the scan as a background asyncio task with its own DB
-    session and env-configured AI service. Called by the start endpoint.
+    Start the scan for an assessment. Dispatches to a Celery worker when
+    ``USE_CELERY`` is set, otherwise runs it in-process as a background
+    asyncio task. Called by the start endpoint.
     """
+    from app.core.config import get_settings
+
+    if get_settings().USE_CELERY:
+        from app.worker.tasks import run_scan_task
+
+        run_scan_task.delay(str(assessment_id))
+        return
+
     import asyncio
 
     from app.core.db import AsyncSessionLocal
