@@ -218,9 +218,36 @@ npm run dev
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
 | `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
+| `GET` | `/api/reports/assessments/{id}?format=html\|pdf` | Render an assessment as an HTML or PDF report |
+| `GET` | `/api/reports/sample?format=html\|pdf` | Bundled demo report (no auth) — great for a quick look |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
 ---
+
+## 📄 Reports
+
+Every assessment can be exported as a polished, self-contained **HTML** report
+or a downloadable **PDF** — executive summary with an aggregate risk score,
+severity breakdown, per-finding remediation guidance, the AI consensus verdict
+for each finding, and an attack-surface appendix.
+
+See a ready-made example without running anything:
+
+- [`docs/sample-report/sentinelai-sample-report.html`](docs/sample-report/sentinelai-sample-report.html)
+- [`docs/sample-report/sentinelai-sample-report.pdf`](docs/sample-report/sentinelai-sample-report.pdf)
+
+Or hit the live demo endpoint once the backend is running:
+
+```bash
+# HTML in your browser
+open http://localhost:8000/api/reports/sample
+
+# Download the PDF
+curl -L "http://localhost:8000/api/reports/sample?format=pdf" -o report.pdf
+```
+
+PDF export uses the pure-Python `xhtml2pdf` engine, so it needs **no system
+libraries** (no Cairo/Pango) and works unchanged in Docker and CI.
 
 ## 🧪 Testing
 

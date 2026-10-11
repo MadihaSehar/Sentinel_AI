@@ -37,6 +37,9 @@ beautifulsoup4==4.12.3
 lxml==5.3.0
 rapidfuzz==3.10.1
 
+# --- Reporting (HTML + pure-Python PDF export; no system libs required) ---
+xhtml2pdf==0.2.16
+
 # --- Logging / config ---
 structlog==24.4.0
 python-dotenv==1.0.1

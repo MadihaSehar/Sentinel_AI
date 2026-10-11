@@ -71,6 +71,20 @@ export const api = {
 export { ApiError };
 
 /**
+ * Absolute URL for a report endpoint, e.g. reportUrl("/reports/sample", "pdf").
+ * Used for plain anchor links / downloads (not fetch), so it must resolve to
+ * an absolute URL the browser can open directly.
+ */
+export function reportUrl(path: string, format?: "html" | "pdf"): string {
+  const base =
+    API_BASE.startsWith("http") || typeof window === "undefined"
+      ? API_BASE
+      : window.location.origin + API_BASE;
+  const query = format ? `?format=${format}` : "";
+  return `${base}${path}${query}`;
+}
+
+/**
  * React hook: subscribes to an assessment's live WebSocket event stream
  * and calls `onEvent` for each parsed `ScanEvent`. Reconnects with
  * backoff on drop. Returns the current connection state so the UI can
