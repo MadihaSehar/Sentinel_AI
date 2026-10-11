@@ -1,0 +1,55 @@
+[
+  {
+    "id": "xss-reflected-html-body-basic",
+    "category": "xss",
+    "context": "html",
+    "encoding": "none",
+    "risk_level": "high",
+    "source": "PayloadsAllTheThings",
+    "description": "Reflected XSS where user input is written directly into the HTML body without encoding. Canonical textbook test uses a harmless alert/script marker to prove script execution.",
+    "detection_method": "Response-intelligence engine flags an unescaped reflection in html_body context, corroborated by a new <script> tag or inline event handler appearing in the DOM diff versus baseline.",
+    "requires_authorization": true,
+    "example": "<script>alert(1)</script>",
+    "applicable_technologies": ["any-server-rendered-html"],
+    "references": ["https://owasp.org/www-community/attacks/xss/"]
+  },
+  {
+    "id": "xss-attribute-breakout",
+    "category": "xss",
+    "context": "attribute",
+    "encoding": "none",
+    "risk_level": "high",
+    "source": "PayloadsAllTheThings",
+    "description": "User input reflected inside an HTML attribute value; an unescaped quote character can allow breaking out of the attribute to inject a new one, such as an event handler.",
+    "detection_method": "Reflection indicator with context=html_attribute and html_escaped=false, combined with a new inline event-handler attribute observed in DOM diff.",
+    "requires_authorization": true,
+    "applicable_technologies": ["any-server-rendered-html"],
+    "references": ["https://owasp.org/www-community/attacks/xss/"]
+  },
+  {
+    "id": "xss-dom-based",
+    "category": "xss",
+    "context": "js_string",
+    "encoding": "none",
+    "risk_level": "high",
+    "source": "PayloadsAllTheThings",
+    "description": "Client-side JavaScript reads an attacker-influenced value (URL fragment, postMessage, storage) and writes it into the DOM via an unsafe sink (innerHTML, document.write, eval) without server round-trip.",
+    "detection_method": "Requires JS-aware crawling (katana) to trace source->sink data flow; static analysis of fetched JS for known unsafe sinks combined with reachable attacker-controlled sources.",
+    "requires_authorization": true,
+    "applicable_technologies": ["spa", "client-heavy-app"],
+    "references": ["https://owasp.org/www-community/attacks/DOM_Based_XSS"]
+  },
+  {
+    "id": "xss-stored",
+    "category": "xss",
+    "context": "html",
+    "encoding": "none",
+    "risk_level": "critical",
+    "source": "PayloadsAllTheThings",
+    "description": "Input submitted in one request (e.g. a comment, profile field) is persisted and rendered unescaped to other users on a later, different request.",
+    "detection_method": "Requires a two-step check: submit a unique marker via a write endpoint, then fetch a separate read endpoint/view and look for an unescaped reflection of that marker.",
+    "requires_authorization": true,
+    "applicable_technologies": ["any-server-rendered-html", "cms"],
+    "references": ["https://owasp.org/www-community/attacks/xss/"]
+  }
+]

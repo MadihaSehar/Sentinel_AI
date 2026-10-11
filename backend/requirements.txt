@@ -1,0 +1,45 @@
+# SentinelAI backend — unified dependencies (Phases 1–11 + consensus/FP).
+# Reconciled from every phase's requirements.txt + requirements-ai.txt.
+
+# --- Web framework / server ---
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+websockets==13.0.1
+
+# --- Data / validation ---
+pydantic==2.9.2
+pydantic-settings==2.5.2
+email-validator==2.2.0
+
+# --- Database ---
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.13.3
+aiosqlite==0.20.0
+
+# --- Queue / cache ---
+redis==5.0.8
+celery==5.4.0
+
+# --- Auth / security ---
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# --- HTTP client (recon + AI providers) ---
+httpx==0.27.2
+
+# --- Response-intelligence / analyzers (Phases 6–8) ---
+beautifulsoup4==4.12.3
+lxml==5.3.0
+rapidfuzz==3.10.1
+
+# --- Logging / config ---
+structlog==24.4.0
+python-dotenv==1.0.1
+
+# --- Testing ---
+pytest==8.3.3
+pytest-asyncio==0.24.0
