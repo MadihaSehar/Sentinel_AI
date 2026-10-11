@@ -216,13 +216,62 @@ npm run dev
 | `POST` | `/api/assessments/{id}/authorize` | Submit authorization confirmation gate |
 | `GET` | `/api/assessments/{id}/stages` | Retrieve pipeline execution stages |
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
-| `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
+| `GET` | `/api/assessments/{id}/findings` | List persisted vulnerability findings |
+| `POST` | `/api/assessments/{id}/findings` | Persist (replace) an assessment's findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
-| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif` | Render an assessment as an HTML, PDF, or SARIF report |
-| `GET` | `/api/reports/sample?format=html\|pdf\|sarif` | Bundled demo report (no auth) — great for a quick look |
+| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif\|json` | Render an assessment as an HTML, PDF, SARIF, or JSON report |
+| `GET` | `/api/reports/sample?format=html\|pdf\|sarif\|json` | Bundled demo report (no auth) — great for a quick look |
+| `POST` | `/api/reports/diff?format=html\|pdf` | Compare two uploaded scan files (New / Fixed / Still-open) |
+| `GET` | `/api/reports/diff/assessments?baseline={id}&current={id}` | Diff two stored assessments |
+| `GET` | `/api/reports/diff/sample?format=html\|pdf` | Bundled demo scan-to-scan diff (no auth) |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
 ---
+
+## ▶️ How a scan runs
+
+Authorizing and starting an assessment (`POST .../start`) launches the
+orchestrator (`app.orchestrator.scan_orchestrator`), which drives the stages
+in order and persists the result:
+
+```text
+recon → discovery → vulnerability → analyze → AI consensus → persist
+```
+
+- It flips `Assessment.status` RUNNING → COMPLETED/FAILED and streams live
+  progress over the WebSocket event bus (`/api/assessments/{id}/events`), so
+  the dashboard shows each stage in real time.
+- Each stage is **isolated**: if a scanning tool isn't installed (or a stage
+  errors), that stage is recorded and the scan continues with whatever was
+  gathered, rather than aborting the whole run.
+- Findings flow through the promotion step (consensus + persistence), so when
+  the scan finishes, the findings API, reports and diff all reflect it.
+
+> **Note:** real findings require the scanning tools to be installed
+> (`backend/scripts/install_recon_tools.sh`); without them the stages no-op
+> cleanly and the scan still completes.
+
+### Running scans on a Celery worker (production scale)
+
+By default scans run **in-process** (one asyncio background task per scan —
+fine for dev + demo). Set `USE_CELERY=true` to dispatch each scan to a
+**Celery worker** instead, so many scans run concurrently without blocking the
+API. The `docker compose` stack already includes a `worker` service; it's the
+only change needed:
+
+```bash
+# already wired in docker-compose.yml:
+#   worker: celery -A app.worker.celery_app worker --concurrency=4
+docker compose up --build
+
+# or run a worker by hand against your Redis broker:
+cd backend && USE_CELERY=true celery -A app.worker.celery_app worker --loglevel=info
+```
+
+The orchestrator logic is identical in both modes — only *where* `run_scan()`
+executes changes. In Celery mode, live scan events are carried between the
+worker and the API's WebSocket over a Redis pub/sub bridge, so the dashboard
+stays live across processes.
 
 ## 📄 Reports
 
@@ -269,6 +318,40 @@ the sample findings (so a first run proves the Security-tab integration), and
 switches to exporting a **real** assessment automatically once you set the
 `SENTINEL_API_URL`, `SENTINEL_TOKEN` and `SENTINEL_ASSESSMENT_ID` repo secrets.
 Trigger it from the Actions tab or on its weekly schedule.
+
+### Scan-to-scan diff
+
+Compare two scans and see exactly what changed — **New / Fixed / Still-open** —
+with a trend verdict and per-finding severity changes. It's file-based, so it
+works today: export each scan (`?format=json` for a loss-less snapshot, or
+`?format=sarif`) and compare the two files.
+
+```bash
+# From the API (multipart upload of two files)
+curl -s -X POST "http://localhost:8000/api/reports/diff?format=html" \
+  -F baseline=@jan-scan.json -F current=@feb-scan.json -o diff.html
+
+# Or from the CLI (output format from the extension)
+python backend/scripts/diff_reports.py jan-scan.json feb-scan.sarif -o diff.pdf
+
+# Or see the bundled demo (previous vs current sample)
+open http://localhost:8000/api/reports/diff/sample
+```
+
+Findings are persisted per assessment, so reports and the diff run off real
+stored data. The scan stages feed persistence through one promotion step —
+`app.orchestrator.finding_promotion.promote_and_persist()` — which normalizes
+nuclei findings and analyzer candidates into one shape, runs each through the
+multi-model AI consensus engine (when AI providers are configured; otherwise
+it keeps the deterministic confidence and marks the finding for manual
+review), and writes the result. You can also ingest findings directly via
+`POST /api/assessments/{id}/findings`. Either way — and two stored assessments can be compared directly with
+`GET /api/reports/diff/assessments?baseline={id}&current={id}` (no files
+needed). Findings are matched across scans by `(vulnerability rule, method,
+endpoint, parameter)`, so a finding whose severity changed is still recognised
+as the same one. Example output:
+[`docs/sample-report/sentinelai-sample-diff.html`](docs/sample-report/sentinelai-sample-diff.html)
+· [`.pdf`](docs/sample-report/sentinelai-sample-diff.pdf).
 
 ## 🧪 Testing
 

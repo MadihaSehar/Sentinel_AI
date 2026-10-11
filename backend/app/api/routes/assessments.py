@@ -9,6 +9,7 @@ from app.models.assessment import Assessment, AssessmentStatus
 from app.models.user import User
 from app.schemas.assessment import AssessmentCreate, AssessmentRead, AuthorizationConfirmRequest
 from app.schemas.scope import ScopeCheckRequest, ScopeCheckResponse
+from app.orchestrator.scan_orchestrator import launch_scan
 from app.services import assessment_service
 from app.services.project_service import get_owned_project_or_404
 from app.services.scope_enforcement import scope_enforcer
@@ -92,6 +93,11 @@ async def start_assessment(
     assessment.status = AssessmentStatus.QUEUED
     await db.commit()
     await db.refresh(assessment)
+
+    # Kick off the scan in the background; it drives recon → discovery →
+    # vulnerability → analyze → consensus → persistence, streaming progress
+    # over the WebSocket event bus and flipping status to COMPLETED/FAILED.
+    launch_scan(assessment_id)
     return assessment
 
 

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>SentinelAI Diff — example.com</title>
+<style>
+  @page { size: A4; margin: 1.6cm; }
+  body { font-family: Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; }
+  h2 { font-size: 14px; border-bottom: 2px solid #0ea5e9; padding-bottom: 4px; margin: 20px 0 8px 0; }
+  .muted { color: #64748b; font-size: 10px; }
+  table { border-collapse: collapse; }
+</style>
+</head>
+<body>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a;border-radius:6px;">
+    <tr><td style="padding:18px 20px;">
+      <div style="font-size:11px;color:#38bdf8;letter-spacing:3px;font-weight:bold;">
+        SENTINELAI &nbsp;·&nbsp; SCAN COMPARISON</div>
+      <div style="font-size:22px;color:#ffffff;font-weight:bold;margin-top:6px;">example.com</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+        Baseline: Previous Assessment (Q3) &nbsp;→&nbsp; Current: Quarterly External Assessment</div>
+    </td></tr>
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+    <tr><td style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;">
+      <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Trend</span>
+      &nbsp;<span style="font-size:16px;font-weight:bold;color:#ca8a04;">Mixed</span>
+      <span style="font-size:11px;color:#475569;">
+        &nbsp;&nbsp;2 fixed · 2 new · 4 still open</span>
+    </td></tr>
+  </table>
+
+  <table width="100%" cellpadding="0" cellspacing="6" style="margin:12px 0;"><tr>
+    <td align="center" width="33%" style="background-color:#fee2e2;border:1px solid #dc2626;padding:12px;"><div style="font-size:26px;font-weight:bold;color:#7f1d1d;">2</div><div style="font-size:10px;color:#7f1d1d;text-transform:uppercase;letter-spacing:1px;">New</div></td>
+    <td align="center" width="33%" style="background-color:#fef9c3;border:1px solid #ca8a04;padding:12px;"><div style="font-size:26px;font-weight:bold;color:#854d0e;">4</div><div style="font-size:10px;color:#854d0e;text-transform:uppercase;letter-spacing:1px;">Still Open</div></td>
+    <td align="center" width="33%" style="background-color:#d1fae5;border:1px solid #059669;padding:12px;"><div style="font-size:26px;font-weight:bold;color:#065f46;">2</div><div style="font-size:10px;color:#065f46;text-transform:uppercase;letter-spacing:1px;">Fixed</div></td>
+  </tr></table>
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr><td style="border-bottom:2px solid #dc2626;padding-bottom:4px;"><span style="font-size:14px;font-weight:bold;color:#7f1d1d;">New</span> <span style="font-size:11px;color:#64748b;">(2)</span></td></tr></table><div style="border:1px solid #e2e8f0;border-left:4px solid #dc2626;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">SQL Injection in product search</td><td align="right"><span style="background-color:#fee2e2;color:#7f1d1d;border:1px solid #dc2626;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">critical</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://api.example.com/v1/products &nbsp;·&nbsp; param: q</div></div><div style="border:1px solid #e2e8f0;border-left:4px solid #0284c7;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Open redirect via &#x27;next&#x27; parameter</td><td align="right"><span style="background-color:#e0f2fe;color:#075985;border:1px solid #0284c7;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">low</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://www.example.com/login &nbsp;·&nbsp; param: next</div></div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr><td style="border-bottom:2px solid #ca8a04;padding-bottom:4px;"><span style="font-size:14px;font-weight:bold;color:#854d0e;">Still Open</span> <span style="font-size:11px;color:#64748b;">(4)</span></td></tr></table><div style="border:1px solid #e2e8f0;border-left:4px solid #ea580c;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Reflected Cross-Site Scripting in error page<span style="font-size:9px;color:#b45309;font-weight:bold;">&nbsp;severity medium → high</span></td><td align="right"><span style="background-color:#ffedd5;color:#9a3412;border:1px solid #ea580c;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">high</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://www.example.com/search &nbsp;·&nbsp; param: query</div></div><div style="border:1px solid #e2e8f0;border-left:4px solid #ea580c;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Insecure Direct Object Reference on invoice download</td><td align="right"><span style="background-color:#ffedd5;color:#9a3412;border:1px solid #ea580c;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">high</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://api.example.com/v1/invoices/{id} &nbsp;·&nbsp; param: id</div></div><div style="border:1px solid #e2e8f0;border-left:4px solid #ca8a04;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Missing security headers</td><td align="right"><span style="background-color:#fef9c3;color:#854d0e;border:1px solid #ca8a04;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">medium</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://www.example.com/</div></div><div style="border:1px solid #e2e8f0;border-left:4px solid #64748b;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Verbose server banner discloses software version</td><td align="right"><span style="background-color:#f1f5f9;color:#334155;border:1px solid #64748b;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">info</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://staging.example.com/</div></div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr><td style="border-bottom:2px solid #059669;padding-bottom:4px;"><span style="font-size:14px;font-weight:bold;color:#065f46;">Fixed</span> <span style="font-size:11px;color:#64748b;">(2)</span></td></tr></table><div style="border:1px solid #e2e8f0;border-left:4px solid #ea580c;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Cross-Site Request Forgery on email change</td><td align="right"><span style="background-color:#ffedd5;color:#9a3412;border:1px solid #ea580c;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">high</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">POST https://www.example.com/account/email</div></div><div style="border:1px solid #e2e8f0;border-left:4px solid #ca8a04;border-radius:4px;padding:8px 10px;margin:6px 0;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:12px;font-weight:bold;color:#0f172a;">Directory listing enabled on backup path</td><td align="right"><span style="background-color:#fef9c3;color:#854d0e;border:1px solid #ca8a04;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:bold;text-transform:uppercase;">medium</span></td></tr></table><div style="font-size:9px;font-family:monospace;color:#475569;margin-top:3px;">GET https://www.example.com/backup/</div></div>
+
+  <div style="margin-top:22px;border-top:1px solid #e2e8f0;padding-top:8px;">
+    <div class="muted" style="line-height:1.5;">
+      Findings are matched across scans by (vulnerability rule, method, endpoint, parameter).
+      "Fixed" means a baseline finding no longer appears in the current scan; verify fixes
+      manually before closing them. Generated by SentinelAI.
+    </div>
+  </div>
+</body>
+</html>

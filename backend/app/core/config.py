@@ -35,6 +35,10 @@ class Settings(BaseSettings):
 
     # --- Redis / Queue ---
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    # When true, scans are dispatched to a Celery worker instead of running
+    # in-process as an asyncio background task. Requires a running worker and
+    # Redis broker (see docker-compose's `worker` service).
+    USE_CELERY: bool = False
 
     # --- CORS ---
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]

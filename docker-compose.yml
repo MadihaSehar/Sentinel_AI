@@ -39,8 +39,27 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@db:5432/sentinel_ai
       REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@db:5432/sentinel_ai
+      REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
     depends_on:
       db:
         condition: service_healthy

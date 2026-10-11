@@ -5,7 +5,14 @@ from .builder import (
     build_report_pdf,
     render_pdf,
 )
-from .sample_data import build_sample_report
+from .diff import (
+    DiffResult,
+    ReportLoadError,
+    diff_reports,
+    load_report_data,
+)
+from .diff_builder import build_diff_html, build_diff_pdf
+from .sample_data import build_sample_baseline_report, build_sample_report
 from .sarif import build_sarif
 from .schemas import (
     ConsensusStatus,
@@ -21,7 +28,14 @@ __all__ = [
     "build_report_pdf",
     "render_pdf",
     "build_sample_report",
+    "build_sample_baseline_report",
     "build_sarif",
+    "diff_reports",
+    "load_report_data",
+    "build_diff_html",
+    "build_diff_pdf",
+    "DiffResult",
+    "ReportLoadError",
     "ReportData",
     "ReportFinding",
     "ReportAsset",

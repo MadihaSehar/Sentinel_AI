@@ -118,6 +118,14 @@ export default function ReportsPage() {
             View Sample (HTML)
           </a>
           <a
+            href={reportUrl("/reports/diff/sample")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+          >
+            Sample Diff
+          </a>
+          <a
             href={reportUrl("/reports/sample", "sarif")}
             target="_blank"
             rel="noopener noreferrer"
