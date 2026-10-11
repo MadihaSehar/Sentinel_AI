@@ -9,6 +9,7 @@ domain — nothing here points at a real host).
 | `sentinelai-sample-report.html` | Standalone HTML report (open in any browser) |
 | `sentinelai-sample-report.pdf`  | The same report exported to PDF |
 | `sentinelai-sample-report.sarif` | SARIF 2.1.0 for GitHub/GitLab code scanning |
+| `sentinelai-sample-diff.html` / `.pdf` | Scan-to-scan diff (New / Fixed / Still-open) of a previous vs current sample |
 
 Both are produced by `app.reports.build_report_html` / `build_report_pdf`, the
 exact code path behind the `/api/reports/*` endpoints. To regenerate them:

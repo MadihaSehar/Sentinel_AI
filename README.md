@@ -218,8 +218,10 @@ npm run dev
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
 | `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
-| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif` | Render an assessment as an HTML, PDF, or SARIF report |
-| `GET` | `/api/reports/sample?format=html\|pdf\|sarif` | Bundled demo report (no auth) — great for a quick look |
+| `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif\|json` | Render an assessment as an HTML, PDF, SARIF, or JSON report |
+| `GET` | `/api/reports/sample?format=html\|pdf\|sarif\|json` | Bundled demo report (no auth) — great for a quick look |
+| `POST` | `/api/reports/diff?format=html\|pdf` | Compare two uploaded scan files (New / Fixed / Still-open) |
+| `GET` | `/api/reports/diff/sample?format=html\|pdf` | Bundled demo scan-to-scan diff (no auth) |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
 ---
@@ -269,6 +271,31 @@ the sample findings (so a first run proves the Security-tab integration), and
 switches to exporting a **real** assessment automatically once you set the
 `SENTINEL_API_URL`, `SENTINEL_TOKEN` and `SENTINEL_ASSESSMENT_ID` repo secrets.
 Trigger it from the Actions tab or on its weekly schedule.
+
+### Scan-to-scan diff
+
+Compare two scans and see exactly what changed — **New / Fixed / Still-open** —
+with a trend verdict and per-finding severity changes. It's file-based, so it
+works today: export each scan (`?format=json` for a loss-less snapshot, or
+`?format=sarif`) and compare the two files.
+
+```bash
+# From the API (multipart upload of two files)
+curl -s -X POST "http://localhost:8000/api/reports/diff?format=html" \
+  -F baseline=@jan-scan.json -F current=@feb-scan.json -o diff.html
+
+# Or from the CLI (output format from the extension)
+python backend/scripts/diff_reports.py jan-scan.json feb-scan.sarif -o diff.pdf
+
+# Or see the bundled demo (previous vs current sample)
+open http://localhost:8000/api/reports/diff/sample
+```
+
+Findings are matched across scans by `(vulnerability rule, method, endpoint,
+parameter)`, so a finding whose severity changed is still recognised as the
+same one. Example output:
+[`docs/sample-report/sentinelai-sample-diff.html`](docs/sample-report/sentinelai-sample-diff.html)
+· [`.pdf`](docs/sample-report/sentinelai-sample-diff.pdf).
 
 ## 🧪 Testing
 

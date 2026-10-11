@@ -16,6 +16,92 @@ from .schemas import (
 )
 
 
+def build_sample_baseline_report() -> ReportData:
+    """
+    A fictional *earlier* scan of the same target, used to demonstrate the
+    scan-to-scan diff. Compared with ``build_sample_report()`` it yields a
+    realistic mix: the SQLi and open redirect are new, the CSRF and directory
+    listing were fixed, the XSS/IDOR/headers/banner are still open (and the
+    XSS severity changed between scans).
+    """
+    return ReportData(
+        target="example.com",
+        assessment_name="Previous Assessment (Q3)",
+        assessment_type="bug_bounty",
+        generated_at=datetime(2026, 7, 12, 10, 0, tzinfo=timezone.utc),
+        findings=[
+            # Still open — but reported at a lower severity last quarter.
+            ReportFinding(
+                title="Reflected Cross-Site Scripting in error page",
+                severity=Severity.MEDIUM,
+                category="Cross-Site Scripting",
+                cwe="CWE-79",
+                endpoint="https://www.example.com/search",
+                method="GET",
+                parameter="query",
+                description="Reflected XSS in the search results page.",
+                recommendation="Context-aware output encoding and a strict CSP.",
+            ),
+            # Still open.
+            ReportFinding(
+                title="Insecure Direct Object Reference on invoice download",
+                severity=Severity.HIGH,
+                category="Broken Access Control",
+                cwe="CWE-639",
+                endpoint="https://api.example.com/v1/invoices/{id}",
+                method="GET",
+                parameter="id",
+                description="Sequential invoice IDs with no ownership check.",
+                recommendation="Enforce per-object ownership checks.",
+            ),
+            # Still open.
+            ReportFinding(
+                title="Missing security headers",
+                severity=Severity.MEDIUM,
+                category="Security Misconfiguration",
+                cwe="CWE-693",
+                endpoint="https://www.example.com/",
+                method="GET",
+                description="CSP/HSTS/X-Frame-Options absent.",
+                recommendation="Add HSTS, CSP, X-Frame-Options, nosniff.",
+            ),
+            # Still open.
+            ReportFinding(
+                title="Verbose server banner discloses software version",
+                severity=Severity.INFO,
+                category="Information Disclosure",
+                cwe="CWE-200",
+                endpoint="https://staging.example.com/",
+                method="GET",
+                description="Server header leaks exact versions.",
+                recommendation="ServerTokens Prod.",
+            ),
+            # Fixed since — no longer present in the current scan.
+            ReportFinding(
+                title="Cross-Site Request Forgery on email change",
+                severity=Severity.HIGH,
+                category="Cross-Site Request Forgery",
+                cwe="CWE-352",
+                endpoint="https://www.example.com/account/email",
+                method="POST",
+                description="State-changing POST without an anti-CSRF token.",
+                recommendation="Add synchronizer tokens / SameSite cookies.",
+            ),
+            # Fixed since.
+            ReportFinding(
+                title="Directory listing enabled on backup path",
+                severity=Severity.MEDIUM,
+                category="Security Misconfiguration",
+                cwe="CWE-548",
+                endpoint="https://www.example.com/backup/",
+                method="GET",
+                description="Autoindex exposed backup archives.",
+                recommendation="Disable directory listing (autoindex off).",
+            ),
+        ],
+    )
+
+
 def build_sample_report() -> ReportData:
     return ReportData(
         target="example.com",
