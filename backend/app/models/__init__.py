@@ -5,6 +5,7 @@ is what Alembic's autogenerate and `create_all` (dev only) rely on.
 """
 from app.models.assessment import Assessment, AssessmentStatus, AssessmentType  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.finding import Finding  # noqa: F401
 from app.models.project import Project  # noqa: F401
 from app.models.scope_rule import ScopeRule, ScopeRuleType  # noqa: F401
 from app.models.user import User  # noqa: F401

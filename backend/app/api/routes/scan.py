@@ -5,12 +5,37 @@ from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.assessment import Assessment, AssessmentStatus
-from app.services import assessment_service
+from app.models.finding import Finding
+from app.services import assessment_service, findings_service
+from app.schemas.finding_ingest import FindingIngestRequest
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
 router = APIRouter(prefix="/assessments", tags=["scan"])
+
+
+def _finding_to_response(f: Finding) -> "FindingResponse":
+    return FindingResponse(
+        id=str(f.id),
+        title=f.title,
+        category=f.category,
+        cwe=f.cwe,
+        owasp=f.owasp,
+        severity=f.severity,
+        confidence=f.consensus_confidence or 0.0,
+        endpoint=f.endpoint,
+        method=f.method,
+        parameter=f.parameter,
+        evidence=list(f.evidence or []),
+        affected_assets=list(f.affected_assets or []),
+        recommendation=f.recommendation or "",
+        references=list(f.references or []),
+        consensus_status=f.consensus_status,
+        agreement_score=f.agreement_score or 0.0,
+        model_count=len(f.participating_models or []),
+        created_at=f.created_at.isoformat() if f.created_at else "",
+    )
 
 
 class PipelineStageResponse(BaseModel):
@@ -117,9 +142,31 @@ async def get_findings(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get vulnerability findings for an assessment."""
+    """Get persisted vulnerability findings for an assessment."""
     await assessment_service.get_assessment_or_404(db, assessment_id, current_user)
-    return []  # populated by vulnerability pipeline + analyzers
+    rows = await findings_service.list_findings(db, assessment_id)
+    return [_finding_to_response(f) for f in rows]
+
+
+@router.post(
+    "/{assessment_id}/findings",
+    response_model=list[FindingResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def ingest_findings(
+    assessment_id: uuid.UUID,
+    payload: FindingIngestRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Persist (replace) the findings for an assessment. This is the write path
+    the vulnerability pipeline uses once candidates are scored; it is also how
+    results are imported. Replace semantics keep a re-scan from duplicating.
+    """
+    await assessment_service.get_assessment_or_404(db, assessment_id, current_user)
+    rows = await findings_service.set_findings(db, assessment_id, payload.findings)
+    return [_finding_to_response(f) for f in rows]
 
 
 @router.get("/{assessment_id}/tool-runs", response_model=list[ToolRunResponse])

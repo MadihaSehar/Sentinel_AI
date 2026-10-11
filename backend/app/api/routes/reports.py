@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
-from app.models.assessment import Assessment
 from app.models.user import User
 from app.reports import (
     PDFGenerationError,
@@ -34,7 +33,7 @@ from app.reports import (
     diff_reports,
     load_report_data,
 )
-from app.services import assessment_service
+from app.services import assessment_service, findings_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -120,23 +119,6 @@ async def _load_uploaded_report(upload: UploadFile, label: str) -> ReportData:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{label}: {exc}") from exc
 
 
-def _assessment_to_report_data(assessment: Assessment) -> ReportData:
-    """
-    Build a report snapshot from a persisted assessment. Findings/assets are
-    populated here as the vulnerability pipeline persists them; until then the
-    report renders the attack-surface and methodology sections with an empty
-    findings list (an honest "nothing confirmed yet" report).
-    """
-    return ReportData(
-        target=assessment.target,
-        assessment_name=assessment.name,
-        assessment_type=getattr(assessment.assessment_type, "value", str(assessment.assessment_type)),
-        authorization_statement=(
-            "Authorization confirmed" if assessment.authorization_confirmed else None
-        ),
-    )
-
-
 @router.get("/sample")
 async def sample_report(format: ReportFormat = ReportFormat.HTML) -> Response:
     """Render the bundled demo report — no authentication required."""
@@ -150,9 +132,10 @@ async def assessment_report(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Response:
-    """Render a report for one of the caller's own assessments."""
+    """Render a report for one of the caller's own assessments, from stored findings."""
     assessment = await assessment_service.get_assessment_or_404(db, assessment_id, current_user)
-    return _render(_assessment_to_report_data(assessment), format)
+    report_data = await findings_service.build_report_data(db, assessment)
+    return _render(report_data, format)
 
 
 @router.get("/diff/sample")
@@ -160,6 +143,22 @@ async def sample_diff(format: DiffFormat = DiffFormat.HTML) -> Response:
     """Demo scan-to-scan diff (previous vs current sample) — no auth."""
     diff = diff_reports(build_sample_baseline_report(), build_sample_report())
     return _render_diff(diff, format)
+
+
+@router.get("/diff/assessments")
+async def diff_assessments(
+    baseline: uuid.UUID,
+    current: uuid.UUID,
+    format: DiffFormat = DiffFormat.HTML,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Diff two of the caller's stored assessments (New / Fixed / Still-open)."""
+    base_assessment = await assessment_service.get_assessment_or_404(db, baseline, current_user)
+    curr_assessment = await assessment_service.get_assessment_or_404(db, current, current_user)
+    base_data = await findings_service.build_report_data(db, base_assessment)
+    curr_data = await findings_service.build_report_data(db, curr_assessment)
+    return _render_diff(diff_reports(base_data, curr_data), format)
 
 
 @router.post("/diff")

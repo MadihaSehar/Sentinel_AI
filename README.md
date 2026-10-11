@@ -216,11 +216,13 @@ npm run dev
 | `POST` | `/api/assessments/{id}/authorize` | Submit authorization confirmation gate |
 | `GET` | `/api/assessments/{id}/stages` | Retrieve pipeline execution stages |
 | `GET` | `/api/assessments/{id}/assets` | Discovered assets & technologies |
-| `GET` | `/api/assessments/{id}/findings` | Verified vulnerability findings |
+| `GET` | `/api/assessments/{id}/findings` | List persisted vulnerability findings |
+| `POST` | `/api/assessments/{id}/findings` | Persist (replace) an assessment's findings |
 | `GET` | `/api/assessments/{id}/ai-analysis`| AI decision log & consensus votes |
 | `GET` | `/api/reports/assessments/{id}?format=html\|pdf\|sarif\|json` | Render an assessment as an HTML, PDF, SARIF, or JSON report |
 | `GET` | `/api/reports/sample?format=html\|pdf\|sarif\|json` | Bundled demo report (no auth) — great for a quick look |
 | `POST` | `/api/reports/diff?format=html\|pdf` | Compare two uploaded scan files (New / Fixed / Still-open) |
+| `GET` | `/api/reports/diff/assessments?baseline={id}&current={id}` | Diff two stored assessments |
 | `GET` | `/api/reports/diff/sample?format=html\|pdf` | Bundled demo scan-to-scan diff (no auth) |
 | `WS` | `/api/assessments/{id}/events` | Live WebSocket event stream |
 
@@ -291,9 +293,13 @@ python backend/scripts/diff_reports.py jan-scan.json feb-scan.sarif -o diff.pdf
 open http://localhost:8000/api/reports/diff/sample
 ```
 
-Findings are matched across scans by `(vulnerability rule, method, endpoint,
-parameter)`, so a finding whose severity changed is still recognised as the
-same one. Example output:
+Findings are persisted per assessment (ingest them via
+`POST /api/assessments/{id}/findings`), so reports and the diff run off real
+stored data — and two stored assessments can be compared directly with
+`GET /api/reports/diff/assessments?baseline={id}&current={id}` (no files
+needed). Findings are matched across scans by `(vulnerability rule, method,
+endpoint, parameter)`, so a finding whose severity changed is still recognised
+as the same one. Example output:
 [`docs/sample-report/sentinelai-sample-diff.html`](docs/sample-report/sentinelai-sample-diff.html)
 · [`.pdf`](docs/sample-report/sentinelai-sample-diff.pdf).
 
