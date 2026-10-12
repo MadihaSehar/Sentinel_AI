@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 import type { AssessmentType } from "@/lib/types";
 
 /**
@@ -23,6 +24,7 @@ export default function NewAssessmentPage() {
   const [concurrency, setConcurrency] = useState(10);
   const [authorized, setAuthorized] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = target.trim() !== "" && scopePattern.trim() !== "" && authorized;
 
@@ -30,25 +32,40 @@ export default function NewAssessmentPage() {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
-    // Wire to api.createAssessment() once Phase 1-8's backend is live;
-    // for now, this just demonstrates the validated payload shape.
-    const payload = {
-      target,
-      assessmentType,
-      scope: {
-        allowedDomains: [scopePattern],
-        allowedCidrs: [],
-        excludedDomains: excludedDomains.split("\n").map((s) => s.trim()).filter(Boolean),
-        excludedCidrs: excludedCidrs.split("\n").map((s) => s.trim()).filter(Boolean),
-        rateLimitPerSecond: rateLimit,
-        concurrency,
-        authorizationConfirmed: authorized,
-      },
-    };
-    console.log("createAssessment payload", payload);
-    await new Promise((r) => setTimeout(r, 400));
-    setSubmitting(false);
-    router.push("/assessments/a1b2c3/live");
+    setError(null);
+
+    // The target itself is added as an implicit include rule server-side,
+    // so only extra scope patterns need to go in allowedDomains.
+    const extraAllowed = scopePattern.trim() === target.trim() ? [] : [scopePattern.trim()];
+
+    try {
+      const assessment = await api.createAssessment({
+        target: target.trim(),
+        assessmentType,
+        scope: {
+          allowedDomains: extraAllowed,
+          allowedCidrs: [],
+          excludedDomains: excludedDomains.split("\n").map((s) => s.trim()).filter(Boolean),
+          excludedCidrs: excludedCidrs.split("\n").map((s) => s.trim()).filter(Boolean),
+          rateLimitPerSecond: rateLimit,
+          concurrency,
+          authorizationConfirmed: authorized,
+        },
+      });
+
+      // Authorized in the same call → kick off the live scan now.
+      await api.startAssessment(assessment.id);
+      router.push(`/assessments/${assessment.id}/live`);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? `${err.status}: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Failed to create assessment";
+      setError(message);
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -166,6 +183,12 @@ export default function NewAssessmentPage() {
             rules.
           </span>
         </label>
+
+        {error && (
+          <div className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-300">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
