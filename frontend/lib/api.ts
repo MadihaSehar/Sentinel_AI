@@ -36,10 +36,12 @@ const API_BASE = resolveApiBase();
 /* Auth bootstrap                                                              */
 /* --------------------------------------------------------------------------- */
 
-const LS_TOKEN = "sentinel.token";
-const LS_EMAIL = "sentinel.email";
-const LS_PASSWORD = "sentinel.password"; // local dev account only
-const LS_PROJECT = "sentinel.projectId";
+// Namespaced/versioned so a change to the dev-account scheme (e.g. the email
+// domain) discards stale values from a previous version.
+const LS_TOKEN = "sentinel.v2.token";
+const LS_EMAIL = "sentinel.v2.email";
+const LS_PASSWORD = "sentinel.v2.password"; // local dev account only
+const LS_PROJECT = "sentinel.v2.projectId";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -66,7 +68,9 @@ function devCredentials(): { email: string; password: string } {
   let email = store?.getItem(LS_EMAIL) ?? "";
   let password = store?.getItem(LS_PASSWORD) ?? "";
   if (!email || !password) {
-    email = `local-${randomId(5)}@sentinel.local`;
+    // Not a reserved/special-use domain (.local etc.) — the backend's email
+    // validator rejects those.
+    email = `local-${randomId(5)}@sentinelai.io`;
     password = `Dev-${randomId(10)}`; // >= 8 chars
     store?.setItem(LS_EMAIL, email);
     store?.setItem(LS_PASSWORD, password);
