@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { ConfidenceBar, ConsensusBadge, StatCard } from "@/components/StatusBadges";
 import { SEVERITY_ORDER } from "@/lib/format";
-import { mockFindings } from "@/lib/mock-data";
+import { api, type FindingRaw } from "@/lib/api";
 import type { ConsensusStatus, Finding, Severity } from "@/lib/types";
 
 const STATUS_FILTERS: (ConsensusStatus | "ALL")[] = [
@@ -15,42 +15,85 @@ const STATUS_FILTERS: (ConsensusStatus | "ALL")[] = [
   "INSUFFICIENT_DATA",
 ];
 
-export default function VulnerabilitiesPage() {
+function toFinding(r: FindingRaw): Finding {
+  return {
+    id: r.id,
+    title: r.title,
+    category: r.category,
+    cwe: r.cwe,
+    owasp: r.owasp,
+    severity: r.severity as Severity,
+    confidence: r.confidence,
+    endpoint: r.endpoint,
+    method: r.method,
+    parameter: r.parameter,
+    evidence: r.evidence,
+    affectedAssets: r.affected_assets,
+    recommendation: r.recommendation,
+    references: r.references,
+    consensusStatus: r.consensus_status as ConsensusStatus,
+    agreementScore: r.agreement_score,
+    modelCount: r.model_count,
+    createdAt: r.created_at,
+  };
+}
+
+export default function VulnerabilitiesPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  const [all, setAll] = useState<Finding[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ConsensusStatus | "ALL">("ALL");
   const [selected, setSelected] = useState<Finding | null>(null);
 
-  const severityCounts = useMemo(() => {
-    const counts: Record<Severity, number> = {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0,
-      info: 0,
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await api.getFindings(id);
+        if (!cancelled) setAll(rows.map(toFinding));
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load.");
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
-    mockFindings.forEach((f) => {
+  }, [id]);
+
+  const severityCounts = useMemo(() => {
+    const counts: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+    all.forEach((f) => {
       counts[f.severity] = (counts[f.severity] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [all]);
 
   const findings = useMemo(() => {
     const filtered =
-      statusFilter === "ALL" ? mockFindings : mockFindings.filter((f) => f.consensusStatus === statusFilter);
+      statusFilter === "ALL" ? all : all.filter((f) => f.consensusStatus === statusFilter);
     return [...filtered].sort(
       (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
     );
-  }, [statusFilter]);
+  }, [all, statusFilter]);
 
   return (
     <div className="p-8">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-100">Vulnerabilities</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Every finding reflects consensus verdict across AI provider models (Gemini, Grok, DeepSeek).
+          Every finding reflects the consensus verdict across AI provider models (when configured).
         </p>
       </header>
 
-      {/* Summary bar at top (count by severity) */}
+      {error && (
+        <div className="mb-6 rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-300">
+          {error}
+        </div>
+      )}
+
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Critical" value={severityCounts.critical} accent="rose" />
         <StatCard label="High" value={severityCounts.high} accent="orange" />
@@ -76,7 +119,7 @@ export default function VulnerabilitiesPage() {
           ))}
         </div>
         <div className="text-xs text-slate-500">
-          Showing {findings.length} of {mockFindings.length} findings
+          Showing {findings.length} of {all.length} findings
         </div>
       </div>
 
@@ -95,46 +138,54 @@ export default function VulnerabilitiesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/70 bg-slate-950">
-              {findings.map((f) => (
-                <tr
-                  key={f.id}
-                  onClick={() => setSelected(f)}
-                  className="cursor-pointer hover:bg-slate-900/60 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <SeverityBadge severity={f.severity} />
-                  </td>
-                  <td className="px-4 py-3 font-medium text-slate-200">
-                    <div>{f.title}</div>
-                    <div className="text-xs text-slate-500">{f.cwe ?? f.category}</div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-400">
-                    <span className="text-slate-500">{f.method}</span> {f.endpoint}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ConsensusBadge status={f.consensusStatus} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <ConfidenceBar confidence={f.confidence} />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-400">
-                    <span className="rounded bg-slate-800 px-2 py-0.5 font-medium text-slate-300">
-                      {f.modelCount} models
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelected(f);
-                      }}
-                      className="rounded bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-300 ring-1 ring-cyan-500/20 hover:bg-cyan-500/20"
-                    >
-                      Inspect
-                    </button>
+              {findings.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-6 text-center text-xs text-slate-600">
+                    {loaded ? "No findings for this assessment yet." : "Loading…"}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                findings.map((f) => (
+                  <tr
+                    key={f.id}
+                    onClick={() => setSelected(f)}
+                    className="cursor-pointer hover:bg-slate-900/60 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <SeverityBadge severity={f.severity} />
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-200">
+                      <div>{f.title}</div>
+                      <div className="text-xs text-slate-500">{f.cwe ?? f.category}</div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">
+                      <span className="text-slate-500">{f.method}</span> {f.endpoint}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ConsensusBadge status={f.consensusStatus} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <ConfidenceBar confidence={f.confidence} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-400">
+                      <span className="rounded bg-slate-800 px-2 py-0.5 font-medium text-slate-300">
+                        {f.modelCount} models
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(f);
+                        }}
+                        className="rounded bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-300 ring-1 ring-cyan-500/20 hover:bg-cyan-500/20"
+                      >
+                        Inspect
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -182,9 +233,7 @@ export default function VulnerabilitiesPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wider text-slate-500">
-                  Consensus Metrics
-                </dt>
+                <dt className="text-xs uppercase tracking-wider text-slate-500">Consensus Metrics</dt>
                 <dd className="mt-1 text-slate-300">
                   {Math.round(selected.confidence * 100)}% confidence ·{" "}
                   {Math.round(selected.agreementScore * 100)}% agreement score across{" "}

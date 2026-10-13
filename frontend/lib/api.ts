@@ -185,6 +185,26 @@ export interface FindingRaw {
   created_at: string;
 }
 
+export interface AssetRaw {
+  id: string;
+  hostname: string;
+  ip_addresses: string[];
+  technologies: string[];
+  open_ports: number[];
+  http_status: number | null;
+  discovered_at: string;
+}
+
+export interface ToolRunRaw {
+  id: string;
+  tool_name: string;
+  target: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  result_count: number | null;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Projects                                                                    */
 /* --------------------------------------------------------------------------- */
@@ -242,6 +262,12 @@ export const api = {
   /** Persisted findings for an assessment. */
   getFindings: (id: string) => authJson<FindingRaw[]>(`/assessments/${id}/findings`),
 
+  /** Discovered assets for an assessment. */
+  getAssets: (id: string) => authJson<AssetRaw[]>(`/assessments/${id}/assets`),
+
+  /** Tool execution history for an assessment. */
+  getToolRuns: (id: string) => authJson<ToolRunRaw[]>(`/assessments/${id}/tool-runs`),
+
   /**
    * Full "live scan" bootstrap: create the assessment under the default
    * project, confirm authorization, and start it. Returns the real
@@ -283,6 +309,27 @@ export const api = {
 
     ls()?.setItem(LS_LAST_ASSESSMENT, created.id);
     return created.id;
+  },
+
+  /** Findings across every assessment (for the standalone Evidence view). */
+  async listAllFindings(): Promise<FindingRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getFindings(a.id)));
+    return batches.flat();
+  },
+
+  /** Assets across every assessment (for the standalone Assets view). */
+  async listAllAssets(): Promise<AssetRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getAssets(a.id)));
+    return batches.flat();
+  },
+
+  /** Tool runs across every assessment (for the standalone Tool Runs view). */
+  async listAllToolRuns(): Promise<ToolRunRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getToolRuns(a.id)));
+    return batches.flat();
   },
 
   /** WebSocket URL for an assessment's live event stream. */
