@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 import type { AssessmentType } from "@/lib/types";
 
 /**
@@ -23,6 +24,7 @@ export default function NewAssessmentPage() {
   const [concurrency, setConcurrency] = useState(10);
   const [authorized, setAuthorized] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = target.trim() !== "" && scopePattern.trim() !== "" && authorized;
 
@@ -30,25 +32,30 @@ export default function NewAssessmentPage() {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
-    // Wire to api.createAssessment() once Phase 1-8's backend is live;
-    // for now, this just demonstrates the validated payload shape.
-    const payload = {
-      target,
-      assessmentType,
-      scope: {
-        allowedDomains: [scopePattern],
-        allowedCidrs: [],
+    setError(null);
+    try {
+      // Creates the assessment under the default project, confirms
+      // authorization ("I CONFIRM AUTHORIZATION"), and starts the scan.
+      const id = await api.createAndStartScan({
+        target: target.trim(),
+        assessmentType,
+        scopePattern: scopePattern.trim(),
         excludedDomains: excludedDomains.split("\n").map((s) => s.trim()).filter(Boolean),
         excludedCidrs: excludedCidrs.split("\n").map((s) => s.trim()).filter(Boolean),
-        rateLimitPerSecond: rateLimit,
+        rateLimit,
         concurrency,
-        authorizationConfirmed: authorized,
-      },
-    };
-    console.log("createAssessment payload", payload);
-    await new Promise((r) => setTimeout(r, 400));
-    setSubmitting(false);
-    router.push("/assessments/a1b2c3/live");
+      });
+      router.push(`/assessments/${id}/live`);
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? `${err.status}: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Failed to create assessment.";
+      setError(msg);
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -166,6 +173,12 @@ export default function NewAssessmentPage() {
             rules.
           </span>
         </label>
+
+        {error && (
+          <div className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm text-rose-300">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"

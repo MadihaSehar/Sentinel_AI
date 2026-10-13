@@ -40,6 +40,12 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    # The dashboard is served from the same host as the API but on port 3000,
+    # which is a different origin, and that host varies by deployment (a LAN
+    # IP, localhost, etc.). Allow any origin on :3000 so the browser can reach
+    # the API without hard-coding the server's address. The scan authorization
+    # gate — not CORS — is what guards scanning.
+    allow_origin_regex=r"https?://[^/]+:3000",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

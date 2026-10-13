@@ -71,8 +71,9 @@ services:
       context: .
       dockerfile: docker/frontend.Dockerfile
     restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://backend:8000/api
+    # No NEXT_PUBLIC_API_BASE_URL: the browser resolves the API at runtime from
+    # its own location (same host, port 8000). Hard-coding the Docker-internal
+    # `backend` hostname here would be unreachable from the user's browser.
     ports:
       - "3000:3000"
     depends_on:
