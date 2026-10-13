@@ -42,6 +42,7 @@ const LS_TOKEN = "sentinel.v2.token";
 const LS_EMAIL = "sentinel.v2.email";
 const LS_PASSWORD = "sentinel.v2.password"; // local dev account only
 const LS_PROJECT = "sentinel.v2.projectId";
+const LS_LAST_ASSESSMENT = "sentinel.v2.lastAssessmentId";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -280,6 +281,7 @@ export const api = {
 
     await authJson(`/projects/${projectId}/assessments/${created.id}/start`, { method: "POST" });
 
+    ls()?.setItem(LS_LAST_ASSESSMENT, created.id);
     return created.id;
   },
 
@@ -294,6 +296,11 @@ export const api = {
 };
 
 export { ApiError };
+
+/** The id of the most recently created assessment, if any (browser only). */
+export function getLastAssessmentId(): string | null {
+  return ls()?.getItem(LS_LAST_ASSESSMENT) ?? null;
+}
 
 /**
  * Absolute URL for a report endpoint, e.g. reportUrl("/reports/sample", "pdf").
