@@ -64,8 +64,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcap0.8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Security toolchain from stage 1 → onto PATH.
-COPY --from=tools /out/ /usr/local/bin/
+# Security toolchain from stage 1 → a dedicated directory placed FIRST on
+# PATH. This keeps the ProjectDiscovery `httpx` scanner from being shadowed by
+# the Python `httpx` package's console script of the same name, which pip
+# installs into /usr/local/bin.
+COPY --from=tools /out/ /opt/sectools/bin/
+ENV PATH="/opt/sectools/bin:${PATH}"
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
