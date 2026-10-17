@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getLastAssessmentId } from "@/lib/api";
 
-/** Section 18's page list, in order. Stub pages render "coming soon" until their phase lands. */
-const NAV_SECTIONS: { label: string; items: { href: string; label: string }[] }[] = [
+/**
+ * Section 18's page list, in order. Items with `assessmentPath` are scoped to a
+ * specific assessment; at render we point them at the most recently created
+ * assessment (or New Assessment if there isn't one yet) rather than a
+ * hard-coded demo id.
+ */
+const NAV_SECTIONS: {
+  label: string;
+  items: { href?: string; assessmentPath?: string; label: string }[];
+}[] = [
   {
     label: "Overview",
     items: [
@@ -16,8 +26,8 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string }[] }[
     label: "Assessment",
     items: [
       { href: "/assessments/new", label: "New Assessment" },
-      { href: "/assessments/a1b2c3/live", label: "Live Assessment" },
-      { href: "/assessments/a1b2c3/attack-surface", label: "Attack Surface" },
+      { assessmentPath: "live", label: "Live Assessment" },
+      { assessmentPath: "attack-surface", label: "Attack Surface" },
     ],
   },
   {
@@ -32,7 +42,7 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string }[] }[
   {
     label: "Analysis",
     items: [
-      { href: "/assessments/a1b2c3/vulnerabilities", label: "Vulnerabilities" },
+      { assessmentPath: "vulnerabilities", label: "Vulnerabilities" },
       { href: "/evidence", label: "Evidence" },
       { href: "/ai-analysis", label: "AI Analysis" },
       { href: "/tool-runs", label: "Tool Runs" },
@@ -50,6 +60,21 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string }[] }[
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [lastId, setLastId] = useState<string | null>(null);
+
+  // Resolve the latest assessment id on the client; re-check on navigation so
+  // the links update right after a scan is created.
+  useEffect(() => {
+    setLastId(getLastAssessmentId());
+  }, [pathname]);
+
+  function resolveHref(item: { href?: string; assessmentPath?: string }): string {
+    if (item.href) return item.href;
+    if (item.assessmentPath) {
+      return lastId ? `/assessments/${lastId}/${item.assessmentPath}` : "/assessments/new";
+    }
+    return "/";
+  }
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
@@ -80,11 +105,12 @@ export function Sidebar() {
             </div>
             <div className="space-y-0.5">
               {section.items.map((item) => {
-                const active = pathname === item.href;
+                const href = resolveHref(item);
+                const active = pathname === href;
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    key={item.label}
+                    href={href}
                     className={`block rounded-md px-2.5 py-1.5 text-sm transition-colors ${
                       active
                         ? "bg-cyan-500/10 text-cyan-300 ring-1 ring-cyan-500/20"
