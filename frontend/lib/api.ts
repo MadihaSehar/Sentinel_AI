@@ -36,10 +36,13 @@ const API_BASE = resolveApiBase();
 /* Auth bootstrap                                                              */
 /* --------------------------------------------------------------------------- */
 
-const LS_TOKEN = "sentinel.token";
-const LS_EMAIL = "sentinel.email";
-const LS_PASSWORD = "sentinel.password"; // local dev account only
-const LS_PROJECT = "sentinel.projectId";
+// Namespaced/versioned so a change to the dev-account scheme (e.g. the email
+// domain) discards stale values from a previous version.
+const LS_TOKEN = "sentinel.v2.token";
+const LS_EMAIL = "sentinel.v2.email";
+const LS_PASSWORD = "sentinel.v2.password"; // local dev account only
+const LS_PROJECT = "sentinel.v2.projectId";
+const LS_LAST_ASSESSMENT = "sentinel.v2.lastAssessmentId";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -66,7 +69,9 @@ function devCredentials(): { email: string; password: string } {
   let email = store?.getItem(LS_EMAIL) ?? "";
   let password = store?.getItem(LS_PASSWORD) ?? "";
   if (!email || !password) {
-    email = `local-${randomId(5)}@sentinel.local`;
+    // Not a reserved/special-use domain (.local etc.) — the backend's email
+    // validator rejects those.
+    email = `local-${randomId(5)}@sentinelai.io`;
     password = `Dev-${randomId(10)}`; // >= 8 chars
     store?.setItem(LS_EMAIL, email);
     store?.setItem(LS_PASSWORD, password);
@@ -180,6 +185,26 @@ export interface FindingRaw {
   created_at: string;
 }
 
+export interface AssetRaw {
+  id: string;
+  hostname: string;
+  ip_addresses: string[];
+  technologies: string[];
+  open_ports: number[];
+  http_status: number | null;
+  discovered_at: string;
+}
+
+export interface ToolRunRaw {
+  id: string;
+  tool_name: string;
+  target: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  result_count: number | null;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Projects                                                                    */
 /* --------------------------------------------------------------------------- */
@@ -237,6 +262,12 @@ export const api = {
   /** Persisted findings for an assessment. */
   getFindings: (id: string) => authJson<FindingRaw[]>(`/assessments/${id}/findings`),
 
+  /** Discovered assets for an assessment. */
+  getAssets: (id: string) => authJson<AssetRaw[]>(`/assessments/${id}/assets`),
+
+  /** Tool execution history for an assessment. */
+  getToolRuns: (id: string) => authJson<ToolRunRaw[]>(`/assessments/${id}/tool-runs`),
+
   /**
    * Full "live scan" bootstrap: create the assessment under the default
    * project, confirm authorization, and start it. Returns the real
@@ -276,7 +307,29 @@ export const api = {
 
     await authJson(`/projects/${projectId}/assessments/${created.id}/start`, { method: "POST" });
 
+    ls()?.setItem(LS_LAST_ASSESSMENT, created.id);
     return created.id;
+  },
+
+  /** Findings across every assessment (for the standalone Evidence view). */
+  async listAllFindings(): Promise<FindingRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getFindings(a.id)));
+    return batches.flat();
+  },
+
+  /** Assets across every assessment (for the standalone Assets view). */
+  async listAllAssets(): Promise<AssetRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getAssets(a.id)));
+    return batches.flat();
+  },
+
+  /** Tool runs across every assessment (for the standalone Tool Runs view). */
+  async listAllToolRuns(): Promise<ToolRunRaw[]> {
+    const assessments = await this.listAssessments();
+    const batches = await Promise.all(assessments.map((a) => this.getToolRuns(a.id)));
+    return batches.flat();
   },
 
   /** WebSocket URL for an assessment's live event stream. */
@@ -290,6 +343,11 @@ export const api = {
 };
 
 export { ApiError };
+
+/** The id of the most recently created assessment, if any (browser only). */
+export function getLastAssessmentId(): string | null {
+  return ls()?.getItem(LS_LAST_ASSESSMENT) ?? null;
+}
 
 /**
  * Absolute URL for a report endpoint, e.g. reportUrl("/reports/sample", "pdf").
